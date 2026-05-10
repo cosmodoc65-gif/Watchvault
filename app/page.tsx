@@ -10,6 +10,7 @@ type Watch = {
   year?: string;
   notes?: string;
   photoUrl?: string;
+  estimatedValue?: number;
   createdAt: number;
 };
 
@@ -28,9 +29,17 @@ function Placeholder() {
   );
 }
 
-function WatchCard({ watch }: { watch: Watch }) {
+function formatGBP(value: number) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function WatchCard({ watch, onDelete }: { watch: Watch; onDelete: (id: string) => void }) {
   return (
-    <div className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.04] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_18px_45px_-30px_rgba(0,0,0,0.75)]">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/20">
         {watch.photoUrl ? (
           // Normal img avoids Next image config pitfalls for blob: URLs
@@ -44,10 +53,19 @@ function WatchCard({ watch }: { watch: Watch }) {
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-black/0" />
       </div>
+      <button
+        type="button"
+        onClick={() => onDelete(watch.id)}
+        className="absolute right-3 top-3 rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-[11px] tracking-wide text-white/80 opacity-0 backdrop-blur transition hover:bg-black/55 hover:text-white group-hover:opacity-100"
+        aria-label={`Delete ${watch.brand} ${watch.model}`}
+        title="Delete"
+      >
+        Delete
+      </button>
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-wide text-white/90">{watch.brand}</p>
+            <p className="truncate text-sm font-semibold tracking-wide text-white/92">{watch.brand}</p>
             <p className="truncate text-xs text-white/65">{watch.model}</p>
           </div>
           <span className="shrink-0 rounded-full border border-amber-200/15 bg-amber-200/10 px-2 py-1 text-[10px] tracking-widest text-amber-200/80">
@@ -55,7 +73,7 @@ function WatchCard({ watch }: { watch: Watch }) {
           </span>
         </div>
 
-        {(watch.reference || watch.year) && (
+        {(watch.reference || watch.year || typeof watch.estimatedValue === "number") && (
           <div className="mt-3 flex flex-wrap gap-2">
             {watch.reference ? (
               <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
@@ -65,6 +83,11 @@ function WatchCard({ watch }: { watch: Watch }) {
             {watch.year ? (
               <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
                 Year {watch.year}
+              </span>
+            ) : null}
+            {typeof watch.estimatedValue === "number" ? (
+              <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
+                Estimated Value: {formatGBP(watch.estimatedValue)}
               </span>
             ) : null}
           </div>
@@ -95,6 +118,7 @@ export default function Page() {
   const [model, setModel] = useState("");
   const [reference, setReference] = useState("");
   const [year, setYear] = useState("");
+  const [estimatedValue, setEstimatedValue] = useState("");
   const [notes, setNotes] = useState("");
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(undefined);
 
@@ -103,6 +127,29 @@ export default function Page() {
     if (watches.length === 1) return "1 watch in collection";
     return `${watches.length} watches in collection`;
   }, [watches.length]);
+
+  const totalCollectionValue = useMemo(() => {
+    return watches.reduce((sum, w) => sum + (typeof w.estimatedValue === "number" ? w.estimatedValue : 0), 0);
+  }, [watches]);
+
+  const mostCommonBrand = useMemo(() => {
+    if (watches.length === 0) return undefined;
+    const counts = new Map<string, number>();
+    for (const w of watches) {
+      const key = (w.brand || "").trim();
+      if (!key) continue;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let best: string | undefined;
+    let bestCount = 0;
+    for (const [brand, count] of counts.entries()) {
+      if (count > bestCount) {
+        best = brand;
+        bestCount = count;
+      }
+    }
+    return best;
+  }, [watches]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -113,34 +160,21 @@ export default function Page() {
     window.localStorage.setItem("watchvault-watches", JSON.stringify(watches));
   }, [watches]);
 
-  const safelyRevokeObjectUrl = useCallback(
-    (url: string | undefined) => {
-      if (!url) return;
-      // Never revoke URLs currently used by saved watches.
-      if (watches.some((w) => w.photoUrl === url)) return;
-      if (!url.startsWith("blob:")) return;
-      URL.revokeObjectURL(url);
-    },
-    [watches],
-  );
-
   const onPickPhoto = useCallback(
     (file: File | null) => {
       if (!file) {
-        safelyRevokeObjectUrl(photoPreviewUrl);
         setPhotoPreviewUrl(undefined);
         return;
       }
 
-      // Requirement: immediately create preview URL and store it
-      const preview = URL.createObjectURL(file);
-
-      // If replacing a preview that isn't used by any saved watch, release it.
-      safelyRevokeObjectUrl(photoPreviewUrl);
-
-      setPhotoPreviewUrl(preview);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result === "string") setPhotoPreviewUrl(result);
+      };
+      reader.readAsDataURL(file);
     },
-    [photoPreviewUrl, safelyRevokeObjectUrl],
+    [],
   );
 
   const onAddWatch = useCallback(
@@ -150,12 +184,16 @@ export default function Page() {
       const trimmedModel = model.trim();
       if (!trimmedBrand || !trimmedModel) return;
 
+      const parsedValue = Number(estimatedValue.replace(/[^\d]/g, ""));
+      const normalizedEstimatedValue = Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : undefined;
+
       const watch: Watch = {
         id: crypto.randomUUID(),
         brand: trimmedBrand,
         model: trimmedModel,
         reference: reference.trim() || undefined,
         year: year.trim() || undefined,
+        estimatedValue: normalizedEstimatedValue,
         notes: notes.trim() || undefined,
         photoUrl: photoPreviewUrl,
         createdAt: Date.now(),
@@ -168,6 +206,7 @@ export default function Page() {
       setModel("");
       setReference("");
       setYear("");
+      setEstimatedValue("");
       setNotes("");
       // Don't revoke here: this URL is now owned by the saved watch object.
       setPhotoPreviewUrl(undefined);
@@ -177,8 +216,12 @@ export default function Page() {
         document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" });
       });
     },
-    [brand, model, reference, year, notes, photoPreviewUrl],
+    [brand, model, reference, year, estimatedValue, notes, photoPreviewUrl],
   );
+
+  const onDeleteWatch = useCallback((id: string) => {
+    setWatches((prev) => prev.filter((w) => w.id !== id));
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -247,6 +290,31 @@ export default function Page() {
                 <p className="text-xs tracking-wide text-white/45">{isMounted ? collectionLabel : "Loading collection..."}</p>
                 <p className="text-xs tracking-wide text-white/55">Saved locally in this browser.</p>
                 <p className="text-xs tracking-wide text-white/45">Saved watches: {isMounted ? watches.length : "—"}</p>
+                <p className="text-xs tracking-wide text-white/45">
+                  Total Collection Value: {isMounted ? formatGBP(totalCollectionValue) : "—"}
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] sm:max-w-xl">
+                <p className="text-[11px] tracking-widest text-white/55">COLLECTION STATISTICS</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                    <p className="text-[11px] tracking-widest text-white/45">TOTAL</p>
+                    <p className="mt-1 text-sm font-semibold text-white/90">{isMounted ? watches.length : "—"}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                    <p className="text-[11px] tracking-widest text-white/45">COMMON BRAND</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-white/90">
+                      {isMounted ? (mostCommonBrand ?? "—") : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                    <p className="text-[11px] tracking-widest text-white/45">TOTAL VALUE</p>
+                    <p className="mt-1 text-sm font-semibold text-white/90">
+                      {isMounted ? formatGBP(totalCollectionValue) : "—"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -272,6 +340,9 @@ export default function Page() {
                       </span>
                       <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/65">
                         Year {year || "—"}
+                      </span>
+                      <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/65">
+                        Value {estimatedValue ? `£${estimatedValue.replace(/[^\d]/g, "")}` : "—"}
                       </span>
                     </div>
                     <p className="mt-4 line-clamp-2 text-xs leading-relaxed text-white/55">{notes || "Notes…"}</p>
@@ -338,6 +409,17 @@ export default function Page() {
                   onChange={(e) => setYear(e.target.value)}
                   className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
                   placeholder="2024"
+                  inputMode="numeric"
+                />
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-xs tracking-wide text-white/55">Estimated value (£)</span>
+                <input
+                  value={estimatedValue}
+                  onChange={(e) => setEstimatedValue(e.target.value)}
+                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  placeholder="8500"
                   inputMode="numeric"
                 />
               </label>
@@ -415,9 +497,9 @@ export default function Page() {
               Your vault is empty. Add your first watch to begin.
             </div>
           ) : (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {watches.map((w) => (
-                <WatchCard key={w.id} watch={w} />
+                <WatchCard key={w.id} watch={w} onDelete={onDeleteWatch} />
               ))}
             </div>
           )}
