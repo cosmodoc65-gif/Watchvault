@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Watch = {
   id: string;
@@ -79,7 +79,16 @@ function WatchCard({ watch }: { watch: Watch }) {
 }
 
 export default function Page() {
-  const [watches, setWatches] = useState<Watch[]>([]);
+  const [watches, setWatches] = useState<Watch[]>(() => {
+    if (typeof window === "undefined") return [];
+    const saved = window.localStorage.getItem("watchvault-watches");
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isMounted, setIsMounted] = useState(false);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -94,6 +103,15 @@ export default function Page() {
     if (watches.length === 1) return "1 watch in collection";
     return `${watches.length} watches in collection`;
   }, [watches.length]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("watchvault-watches", JSON.stringify(watches));
+  }, [watches]);
 
   const safelyRevokeObjectUrl = useCallback(
     (url: string | undefined) => {
@@ -225,7 +243,11 @@ export default function Page() {
                 </button>
               </div>
 
-              <p className="mt-6 text-xs tracking-wide text-white/45">{collectionLabel}</p>
+              <div className="mt-6 grid gap-1">
+                <p className="text-xs tracking-wide text-white/45">{isMounted ? collectionLabel : "Loading collection..."}</p>
+                <p className="text-xs tracking-wide text-white/55">Saved locally in this browser.</p>
+                <p className="text-xs tracking-wide text-white/45">Saved watches: {isMounted ? watches.length : "—"}</p>
+              </div>
             </div>
 
             <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset]">
@@ -384,7 +406,11 @@ export default function Page() {
             </button>
           </div>
 
-          {watches.length === 0 ? (
+          {!isMounted ? (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/60">
+              Loading collection...
+            </div>
+          ) : watches.length === 0 ? (
             <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/60">
               Your vault is empty. Add your first watch to begin.
             </div>
