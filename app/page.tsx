@@ -37,7 +37,15 @@ function formatGBP(value: number) {
   }).format(value);
 }
 
-function WatchCard({ watch, onDelete }: { watch: Watch; onDelete: (id: string) => void }) {
+function WatchCard({
+  watch,
+  onDelete,
+  onEdit,
+}: {
+  watch: Watch;
+  onDelete: (id: string) => void;
+  onEdit: (watch: Watch) => void;
+}) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.04] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_18px_45px_-30px_rgba(0,0,0,0.75)]">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/20">
@@ -53,15 +61,26 @@ function WatchCard({ watch, onDelete }: { watch: Watch; onDelete: (id: string) =
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-black/0" />
       </div>
-      <button
-        type="button"
-        onClick={() => onDelete(watch.id)}
-        className="absolute right-3 top-3 rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-[11px] tracking-wide text-white/80 opacity-0 backdrop-blur transition hover:bg-black/55 hover:text-white group-hover:opacity-100"
-        aria-label={`Delete ${watch.brand} ${watch.model}`}
-        title="Delete"
-      >
-        Delete
-      </button>
+      <div className="absolute right-3 top-3 flex items-center gap-2 opacity-100 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={() => onEdit(watch)}
+          className="rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-[11px] tracking-wide text-white/80 backdrop-blur transition hover:bg-black/55 hover:text-white"
+          aria-label={`Edit ${watch.brand} ${watch.model}`}
+          title="Edit"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(watch.id)}
+          className="rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-[11px] tracking-wide text-white/80 backdrop-blur transition hover:bg-black/55 hover:text-white"
+          aria-label={`Delete ${watch.brand} ${watch.model}`}
+          title="Delete"
+        >
+          Delete
+        </button>
+      </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -112,6 +131,7 @@ export default function Page() {
     }
   });
   const [isMounted, setIsMounted] = useState(false);
+  const [editingWatchId, setEditingWatchId] = useState<string | null>(null);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -187,19 +207,39 @@ export default function Page() {
       const parsedValue = Number(estimatedValue.replace(/[^\d]/g, ""));
       const normalizedEstimatedValue = Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : undefined;
 
-      const watch: Watch = {
-        id: crypto.randomUUID(),
-        brand: trimmedBrand,
-        model: trimmedModel,
-        reference: reference.trim() || undefined,
-        year: year.trim() || undefined,
-        estimatedValue: normalizedEstimatedValue,
-        notes: notes.trim() || undefined,
-        photoUrl: photoPreviewUrl,
-        createdAt: Date.now(),
-      };
+      if (editingWatchId) {
+        setWatches((prev) =>
+          prev.map((w) =>
+            w.id === editingWatchId
+              ? {
+                  ...w,
+                  brand: trimmedBrand,
+                  model: trimmedModel,
+                  reference: reference.trim() || undefined,
+                  year: year.trim() || undefined,
+                  estimatedValue: normalizedEstimatedValue,
+                  notes: notes.trim() || undefined,
+                  photoUrl: photoPreviewUrl,
+                  // preserve createdAt
+                }
+              : w,
+          ),
+        );
+      } else {
+        const watch: Watch = {
+          id: crypto.randomUUID(),
+          brand: trimmedBrand,
+          model: trimmedModel,
+          reference: reference.trim() || undefined,
+          year: year.trim() || undefined,
+          estimatedValue: normalizedEstimatedValue,
+          notes: notes.trim() || undefined,
+          photoUrl: photoPreviewUrl,
+          createdAt: Date.now(),
+        };
 
-      setWatches((prev) => [watch, ...prev]);
+        setWatches((prev) => [watch, ...prev]);
+      }
 
       // Reset form (keep UX snappy)
       setBrand("");
@@ -210,17 +250,44 @@ export default function Page() {
       setNotes("");
       // Don't revoke here: this URL is now owned by the saved watch object.
       setPhotoPreviewUrl(undefined);
+      setEditingWatchId(null);
 
       // After adding, take user to their collection
       requestAnimationFrame(() => {
-        document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" });
+        document.getElementById(editingWatchId ? "add-watch" : "collection")?.scrollIntoView({ behavior: "smooth" });
       });
     },
-    [brand, model, reference, year, estimatedValue, notes, photoPreviewUrl],
+    [brand, model, reference, year, estimatedValue, notes, photoPreviewUrl, editingWatchId],
   );
 
   const onDeleteWatch = useCallback((id: string) => {
     setWatches((prev) => prev.filter((w) => w.id !== id));
+    setEditingWatchId((cur) => (cur === id ? null : cur));
+  }, []);
+
+  const onStartEdit = useCallback((watch: Watch) => {
+    setEditingWatchId(watch.id);
+    setBrand(watch.brand ?? "");
+    setModel(watch.model ?? "");
+    setReference(watch.reference ?? "");
+    setYear(watch.year ?? "");
+    setEstimatedValue(typeof watch.estimatedValue === "number" ? String(watch.estimatedValue) : "");
+    setNotes(watch.notes ?? "");
+    setPhotoPreviewUrl(watch.photoUrl);
+    requestAnimationFrame(() => {
+      document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, []);
+
+  const onCancelEdit = useCallback(() => {
+    setEditingWatchId(null);
+    setBrand("");
+    setModel("");
+    setReference("");
+    setYear("");
+    setEstimatedValue("");
+    setNotes("");
+    setPhotoPreviewUrl(undefined);
   }, []);
 
   return (
@@ -455,20 +522,33 @@ export default function Page() {
                     />
                   </label>
                   <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-                    Uploads stay local. A preview URL is stored on the watch object.
+                    Uploads stay local. The image is saved in this browser.
                   </p>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className={classNames(
-                  "rounded-2xl border border-amber-200/20 bg-amber-200/10 px-5 py-3 text-sm font-semibold tracking-wide text-amber-200/90",
-                  "hover:bg-amber-200/15",
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="submit"
+                  className={classNames(
+                    "rounded-2xl border border-amber-200/20 bg-amber-200/10 px-5 py-3 text-sm font-semibold tracking-wide text-amber-200/90",
+                    "hover:bg-amber-200/15",
+                  )}
+                >
+                  {editingWatchId ? "Save Changes" : "Add to collection"}
+                </button>
+                {editingWatchId ? (
+                  <button
+                    type="button"
+                    onClick={onCancelEdit}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold tracking-wide text-white/80 hover:bg-white/10"
+                  >
+                    Cancel Edit
+                  </button>
+                ) : (
+                  <div className="hidden sm:block" />
                 )}
-              >
-                Add to collection
-              </button>
+              </div>
             </div>
           </form>
         </section>
@@ -499,7 +579,7 @@ export default function Page() {
           ) : (
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {watches.map((w) => (
-                <WatchCard key={w.id} watch={w} onDelete={onDeleteWatch} />
+                <WatchCard key={w.id} watch={w} onDelete={onDeleteWatch} onEdit={onStartEdit} />
               ))}
             </div>
           )}
