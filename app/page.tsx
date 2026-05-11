@@ -18,11 +18,51 @@ function classNames(...values: Array<string | false | undefined | null>) {
   return values.filter(Boolean).join(" ");
 }
 
+/**
+ * Champagne / antique brushed gold — strong legibility on black, still boutique-restrained.
+ * ~2px frames, warm metallic tone, soft separation shadows (no neon, no orange pop).
+ */
+const gold = {
+  frame:
+    "border-2 border-[hsla(35,30%,46%,0.92)] bg-white/[0.03] shadow-[inset_0_1px_0_0_hsla(38,22%,58%,0.2),0_0_0_1px_rgba(0,0,0,0.55),0_12px_44px_-14px_hsla(36,32%,14%,0.45)]",
+  frameLg:
+    "border-2 border-[hsla(34,28%,44%,0.9)] bg-white/[0.03] shadow-[inset_0_1px_0_0_hsla(37,20%,56%,0.18),0_0_0_1px_rgba(0,0,0,0.58),0_14px_52px_-16px_hsla(36,30%,12%,0.48)]",
+  cardHover:
+    "transition duration-300 ease-out hover:border-[hsla(33,32%,54%,0.98)] hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_0_hsla(36,24%,64%,0.24),0_0_0_1px_hsla(34,28%,32%,0.45),0_22px_58px_-18px_hsla(36,34%,10%,0.5)] hover:-translate-y-0.5",
+  focus:
+    "focus:border-[hsla(33,30%,52%,0.95)] focus:ring-2 focus:ring-[hsla(34,32%,42%,0.45)] focus:ring-offset-2 focus:ring-offset-[#070708]",
+  input:
+    "rounded-2xl border-2 border-[hsla(34,26%,44%,0.88)] bg-black/45 px-4 py-3 text-sm text-white/92 outline-none placeholder:text-white/40",
+  tag: "rounded-lg border-2 border-[hsla(34,24%,46%,0.82)] bg-black/38 px-2 py-1 text-[11px] text-white/85 shadow-[inset_0_1px_0_0_hsla(36,18%,54%,0.12)]",
+  statCell:
+    "rounded-xl border-2 border-[hsla(34,24%,44%,0.85)] bg-black/42 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(36,18%,52%,0.12),0_6px_22px_-14px_hsla(36,30%,10%,0.42)]",
+  btnPrimary:
+    "rounded-2xl border-2 border-[hsla(32,34%,54%,0.96)] bg-gradient-to-b from-[hsla(33,24%,22%,0.97)] via-[hsla(32,20%,14%,0.95)] to-[hsla(30,18%,9%,0.94)] px-5 py-3 text-sm font-semibold tracking-wide text-[hsla(38,38%,95%,0.99)] shadow-[inset_0_1px_0_0_hsla(36,26%,62%,0.32)] transition hover:border-[hsla(31,36%,58%,0.99)] hover:shadow-[inset_0_1px_0_0_hsla(35,28%,68%,0.22),0_0_36px_-12px_hsla(36,36%,22%,0.45)]",
+  btnSecondary:
+    "rounded-2xl border-2 border-[hsla(34,26%,46%,0.88)] bg-black/48 px-5 py-3 text-sm font-semibold tracking-wide text-white/92 shadow-[inset_0_1px_0_0_hsla(36,18%,52%,0.14)] transition hover:border-[hsla(32,30%,54%,0.95)] hover:bg-black/56 hover:text-white",
+  btnSmPrimary:
+    "rounded-xl border-2 border-[hsla(32,32%,52%,0.94)] bg-gradient-to-b from-[hsla(32,22%,18%,0.96)] to-[hsla(30,16%,10%,0.94)] px-3 py-2 text-xs font-semibold tracking-wide text-[hsla(38,36%,94%,0.99)] shadow-[inset_0_1px_0_0_hsla(35,24%,58%,0.28)] transition hover:border-[hsla(31,36%,56%,0.98)] hover:shadow-[0_0_28px_-10px_hsla(36,34%,18%,0.42)]",
+  btnSmSecondary:
+    "rounded-xl border-2 border-[hsla(34,24%,44%,0.86)] bg-black/52 px-3 py-2 text-xs tracking-wide text-white/90 transition hover:border-[hsla(32,30%,52%,0.95)] hover:bg-black/60",
+  pill:
+    "rounded-full border-2 border-[hsla(34,26%,46%,0.88)] bg-black/40 px-3 py-1 text-[11px] tracking-widest text-white/82 shadow-[inset_0_1px_0_0_hsla(36,18%,54%,0.14)]",
+};
+
 function Placeholder() {
   return (
-    <div className="flex h-full w-full items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0">
+    <div
+      className={classNames(
+        "flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-white/[0.04] to-transparent",
+        gold.frame,
+      )}
+    >
       <div className="text-center">
-        <div className="mx-auto mb-2 h-10 w-10 rounded-full border border-white/10 bg-white/5" />
+        <div
+          className={classNames(
+            "mx-auto mb-2 h-10 w-10 rounded-full bg-black/30",
+            "border-2 border-[hsla(34,26%,44%,0.82)] shadow-[inset_0_1px_0_0_hsla(36,18%,52%,0.12)]",
+          )}
+        />
         <p className="text-xs tracking-wide text-white/55">No photo</p>
       </div>
     </div>
@@ -47,36 +87,46 @@ function WatchCard({
   onEdit: (watch: Watch) => void;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.04] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_18px_45px_-30px_rgba(0,0,0,0.75)]">
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/20">
+    <div
+      className={classNames(
+        "group relative overflow-hidden rounded-2xl backdrop-blur",
+        gold.frame,
+        gold.cardHover,
+      )}
+    >
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/25">
         {watch.photoUrl ? (
-          // Normal img avoids Next image config pitfalls for blob: URLs
           <img
             src={watch.photoUrl}
             alt={`${watch.brand} ${watch.model}`}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+            draggable={false}
+            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.02]"
           />
         ) : (
           <Placeholder />
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-black/0" />
       </div>
-      <div className="absolute right-3 top-3 flex items-center gap-2 opacity-100 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
+      <div className="absolute right-3 top-3 flex items-center gap-2 opacity-100 sm:opacity-0 sm:transition-opacity sm:duration-300 sm:group-hover:opacity-100">
         <button
           type="button"
           onClick={() => onEdit(watch)}
-          className="rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-[11px] tracking-wide text-white/80 backdrop-blur transition hover:bg-black/55 hover:text-white"
+          className={classNames(
+            "px-2.5 py-2 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur",
+            gold.btnSmSecondary,
+          )}
           aria-label={`Edit ${watch.brand} ${watch.model}`}
-          title="Edit"
         >
           Edit
         </button>
         <button
           type="button"
           onClick={() => onDelete(watch.id)}
-          className="rounded-xl border border-white/10 bg-black/40 px-2.5 py-2 text-[11px] tracking-wide text-white/80 backdrop-blur transition hover:bg-black/55 hover:text-white"
+          className={classNames(
+            "px-2.5 py-2 text-[11px] font-medium tracking-wide text-white/90 backdrop-blur",
+            gold.btnSmSecondary,
+          )}
           aria-label={`Delete ${watch.brand} ${watch.model}`}
-          title="Delete"
         >
           Delete
         </button>
@@ -87,27 +137,17 @@ function WatchCard({
             <p className="truncate text-sm font-semibold tracking-wide text-white/92">{watch.brand}</p>
             <p className="truncate text-xs text-white/65">{watch.model}</p>
           </div>
-          <span className="shrink-0 rounded-full border border-amber-200/15 bg-amber-200/10 px-2 py-1 text-[10px] tracking-widest text-amber-200/80">
+          <span className="shrink-0 rounded-full border-2 border-[hsla(32,32%,50%,0.92)] bg-[hsla(30,16%,8%,0.78)] px-2 py-1 text-[10px] tracking-widest text-[hsla(38,36%,92%,0.97)] shadow-[inset_0_1px_0_0_hsla(36,22%,56%,0.2)]">
             VAULTED
           </span>
         </div>
 
         {(watch.reference || watch.year || typeof watch.estimatedValue === "number") && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {watch.reference ? (
-              <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
-                Ref. {watch.reference}
-              </span>
-            ) : null}
-            {watch.year ? (
-              <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
-                Year {watch.year}
-              </span>
-            ) : null}
+            {watch.reference ? <span className={gold.tag}>Ref. {watch.reference}</span> : null}
+            {watch.year ? <span className={gold.tag}>Year {watch.year}</span> : null}
             {typeof watch.estimatedValue === "number" ? (
-              <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/70">
-                Estimated Value: {formatGBP(watch.estimatedValue)}
-              </span>
+              <span className={gold.tag}>Estimated Value: {formatGBP(watch.estimatedValue)}</span>
             ) : null}
           </div>
         )}
@@ -292,10 +332,15 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-black/20 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b-2 border-[hsla(34,28%,42%,0.82)] bg-black/45 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl border border-white/10 bg-gradient-to-br from-amber-200/20 to-white/5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset]" />
+            <div
+              className={classNames(
+                "h-9 w-9 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.02]",
+                gold.frame,
+              )}
+            />
             <div>
               <p className="text-sm font-semibold tracking-wide">WatchVault</p>
               <p className="text-[11px] text-white/55">Private. Local. Yours.</p>
@@ -306,14 +351,14 @@ export default function Page() {
             <button
               type="button"
               onClick={() => document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" })}
-              className="hidden rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs tracking-wide text-white/80 hover:bg-white/10 sm:inline-flex"
+              className={classNames("hidden sm:inline-flex", gold.btnSmSecondary)}
             >
               View collection
             </button>
             <button
               type="button"
               onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
-              className="rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs font-semibold tracking-wide text-amber-200/90 hover:bg-amber-200/15"
+              className={gold.btnSmPrimary}
             >
               Add Watch
             </button>
@@ -325,9 +370,7 @@ export default function Page() {
         <section className="pb-10 pt-12 sm:pt-16">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
-              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] tracking-widest text-white/70">
-                YOUR COLLECTION, REFINED
-              </p>
+              <p className={classNames("mb-3 inline-flex items-center gap-2", gold.pill)}>YOUR COLLECTION, REFINED</p>
               <h1 className="text-balance text-4xl font-semibold tracking-tight text-white/95 sm:text-5xl">
                 A dark, quiet place for the watches you love.
               </h1>
@@ -340,14 +383,14 @@ export default function Page() {
                 <button
                   type="button"
                   onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
-                  className="rounded-2xl border border-amber-200/20 bg-gradient-to-b from-amber-200/15 to-amber-200/10 px-5 py-3 text-sm font-semibold tracking-wide text-amber-200/90 shadow-[0_0_0_1px_rgba(255,215,128,0.16)_inset] hover:from-amber-200/20 hover:to-amber-200/12"
+                  className={gold.btnPrimary}
                 >
                   Start your vault
                 </button>
                 <button
                   type="button"
                   onClick={() => document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" })}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm tracking-wide text-white/80 hover:bg-white/10"
+                  className={gold.btnSecondary}
                 >
                   View collection
                 </button>
@@ -362,20 +405,20 @@ export default function Page() {
                 </p>
               </div>
 
-              <div className="mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] sm:max-w-xl">
+              <div className={classNames("mt-6 grid gap-3 rounded-2xl p-4 sm:max-w-xl", gold.frameLg)}>
                 <p className="text-[11px] tracking-widest text-white/55">COLLECTION STATISTICS</p>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <div className={gold.statCell}>
                     <p className="text-[11px] tracking-widest text-white/45">TOTAL</p>
                     <p className="mt-1 text-sm font-semibold text-white/90">{isMounted ? watches.length : "—"}</p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <div className={gold.statCell}>
                     <p className="text-[11px] tracking-widest text-white/45">COMMON BRAND</p>
                     <p className="mt-1 truncate text-sm font-semibold text-white/90">
                       {isMounted ? (mostCommonBrand ?? "—") : "—"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                  <div className={gold.statCell}>
                     <p className="text-[11px] tracking-widest text-white/45">TOTAL VALUE</p>
                     <p className="mt-1 text-sm font-semibold text-white/90">
                       {isMounted ? formatGBP(totalCollectionValue) : "—"}
@@ -385,30 +428,31 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset]">
-              <div className="absolute inset-0 bg-[radial-gradient(650px_350px_at_30%_20%,rgba(255,215,128,0.10),transparent_60%)]" />
+            <div className={classNames("relative overflow-hidden rounded-3xl p-5", gold.frameLg)}>
+              <div className="absolute inset-0 bg-[radial-gradient(650px_350px_at_30%_20%,hsla(35,28%,48%,0.22),transparent_60%)]" />
               <div className="relative">
                 <p className="text-xs tracking-widest text-white/55">PREVIEW</p>
                 <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                  <div className={classNames("aspect-[4/3] overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
                     {photoPreviewUrl ? (
-                      <img src={photoPreviewUrl} alt="Selected watch preview" className="h-full w-full object-cover" />
+                      <img
+                        src={photoPreviewUrl}
+                        alt="Selected watch preview"
+                        draggable={false}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <Placeholder />
                     )}
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className={classNames("rounded-2xl bg-white/[0.04] p-4", gold.frame)}>
                     <p className="text-[11px] tracking-widest text-white/55">DETAILS</p>
                     <p className="mt-3 truncate text-sm font-semibold text-white/90">{brand || "Brand"}</p>
                     <p className="truncate text-xs text-white/65">{model || "Model"}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/65">
-                        Ref. {reference || "—"}
-                      </span>
-                      <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/65">
-                        Year {year || "—"}
-                      </span>
-                      <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-white/65">
+                      <span className={gold.tag}>Ref. {reference || "—"}</span>
+                      <span className={gold.tag}>Year {year || "—"}</span>
+                      <span className={gold.tag}>
                         Value {estimatedValue ? `£${estimatedValue.replace(/[^\d]/g, "")}` : "—"}
                       </span>
                     </div>
@@ -422,7 +466,7 @@ export default function Page() {
 
         <section
           id="add-watch"
-          className="scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur sm:p-7"
+          className={classNames("scroll-mt-24 rounded-3xl p-5 backdrop-blur sm:p-7", gold.frameLg)}
         >
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -442,7 +486,7 @@ export default function Page() {
                 <input
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  className={classNames(gold.input, gold.focus)}
                   placeholder="Rolex"
                   required
                 />
@@ -453,7 +497,7 @@ export default function Page() {
                 <input
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  className={classNames(gold.input, gold.focus)}
                   placeholder="Submariner"
                   required
                 />
@@ -464,7 +508,7 @@ export default function Page() {
                 <input
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
-                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  className={classNames(gold.input, gold.focus)}
                   placeholder="126610LN"
                 />
               </label>
@@ -474,7 +518,7 @@ export default function Page() {
                 <input
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
-                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  className={classNames(gold.input, gold.focus)}
                   placeholder="2024"
                   inputMode="numeric"
                 />
@@ -485,7 +529,7 @@ export default function Page() {
                 <input
                   value={estimatedValue}
                   onChange={(e) => setEstimatedValue(e.target.value)}
-                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  className={classNames(gold.input, gold.focus)}
                   placeholder="8500"
                   inputMode="numeric"
                 />
@@ -496,29 +540,34 @@ export default function Page() {
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-[92px] resize-y rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white/90 outline-none placeholder:text-white/35 focus:border-amber-200/25"
+                  className={classNames("min-h-[92px] resize-y", gold.input, gold.focus)}
                   placeholder="Dial, bracelet, story…"
                 />
               </label>
             </div>
 
             <div className="grid gap-4">
-              <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+              <div className={classNames("overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
                 <div className="aspect-[4/3] p-3">
                   {photoPreviewUrl ? (
-                    <img src={photoPreviewUrl} alt="Photo preview" className="h-full w-full rounded-xl object-cover" />
+                    <img
+                      src={photoPreviewUrl}
+                      alt="Photo preview"
+                      draggable={false}
+                      className="h-full w-full rounded-xl object-cover"
+                    />
                   ) : (
                     <Placeholder />
                   )}
                 </div>
-                <div className="border-t border-white/10 p-3">
+                <div className="border-t-2 border-[hsla(34,26%,42%,0.72)] p-3">
                   <label className="grid gap-2">
                     <span className="text-xs tracking-wide text-white/55">Photo</span>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => onPickPhoto(e.target.files?.[0] ?? null)}
-                      className="block w-full text-xs text-white/70 file:mr-3 file:rounded-xl file:border file:border-white/10 file:bg-white/5 file:px-3 file:py-2 file:text-xs file:text-white/80 hover:file:bg-white/10"
+                      className="block w-full text-xs text-white/78 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(34,26%,44%,0.88)] file:bg-black/45 file:px-3 file:py-2 file:text-xs file:font-medium file:text-white/90 hover:file:border-[hsla(32,32%,52%,0.95)] hover:file:bg-black/55"
                     />
                   </label>
                   <p className="mt-2 text-[11px] leading-relaxed text-white/45">
@@ -528,21 +577,11 @@ export default function Page() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <button
-                  type="submit"
-                  className={classNames(
-                    "rounded-2xl border border-amber-200/20 bg-amber-200/10 px-5 py-3 text-sm font-semibold tracking-wide text-amber-200/90",
-                    "hover:bg-amber-200/15",
-                  )}
-                >
+                <button type="submit" className={gold.btnPrimary}>
                   {editingWatchId ? "Save Changes" : "Add to collection"}
                 </button>
                 {editingWatchId ? (
-                  <button
-                    type="button"
-                    onClick={onCancelEdit}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold tracking-wide text-white/80 hover:bg-white/10"
-                  >
+                  <button type="button" onClick={onCancelEdit} className={gold.btnSecondary}>
                     Cancel Edit
                   </button>
                 ) : (
@@ -562,18 +601,18 @@ export default function Page() {
             <button
               type="button"
               onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs tracking-wide text-white/80 hover:bg-white/10"
+              className={classNames("rounded-2xl px-4 py-2", gold.btnSmSecondary)}
             >
               Add another
             </button>
           </div>
 
           {!isMounted ? (
-            <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/60">
+            <div className={classNames("mt-6 rounded-3xl p-8 text-center text-sm text-white/62", gold.frameLg)}>
               Loading collection...
             </div>
           ) : watches.length === 0 ? (
-            <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-white/60">
+            <div className={classNames("mt-6 rounded-3xl p-8 text-center text-sm text-white/62", gold.frameLg)}>
               Your vault is empty. Add your first watch to begin.
             </div>
           ) : (
