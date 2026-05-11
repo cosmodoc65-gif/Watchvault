@@ -1,6 +1,13 @@
 "use client";
 
+import { Cormorant_Garamond } from "next/font/google";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
+const vaultSerif = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
 
 type Watch = {
   id: string;
@@ -13,6 +20,46 @@ type Watch = {
   estimatedValue?: number;
   createdAt: number;
 };
+
+type CollectionCurrency = "GBP" | "EUR" | "USD" | "CHF" | "JPY";
+
+const CURRENCY_STORAGE_KEY = "watchvault-currency";
+
+const CURRENCIES: { code: CollectionCurrency; label: string }[] = [
+  { code: "GBP", label: "GBP (£)" },
+  { code: "EUR", label: "EUR (€)" },
+  { code: "USD", label: "USD ($)" },
+  { code: "CHF", label: "CHF (CHF)" },
+  { code: "JPY", label: "JPY (¥)" },
+];
+
+const DEFAULT_CURRENCY: CollectionCurrency = "GBP";
+
+const LOCALE_BY_CURRENCY: Record<CollectionCurrency, string> = {
+  GBP: "en-GB",
+  EUR: "de-DE",
+  USD: "en-US",
+  CHF: "de-CH",
+  JPY: "ja-JP",
+};
+
+function isCollectionCurrency(v: string | null): v is CollectionCurrency {
+  return v === "GBP" || v === "EUR" || v === "USD" || v === "CHF" || v === "JPY";
+}
+
+function formatCollectionCurrency(value: number, currency: CollectionCurrency): string {
+  return new Intl.NumberFormat(LOCALE_BY_CURRENCY[currency], {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function previewValueDisplay(raw: string, currency: CollectionCurrency): string {
+  const n = Number(raw.replace(/[^\d]/g, ""));
+  if (!raw.trim() || !Number.isFinite(n) || n <= 0) return "—";
+  return formatCollectionCurrency(n, currency);
+}
 
 function classNames(...values: Array<string | false | undefined | null>) {
   return values.filter(Boolean).join(" ");
@@ -48,6 +95,69 @@ const gold = {
     "rounded-full border-2 border-[hsla(34,26%,46%,0.88)] bg-black/40 px-3 py-1 text-[11px] tracking-widest text-white/82 shadow-[inset_0_1px_0_0_hsla(36,18%,54%,0.14)]",
 };
 
+/** Refined monogram: vault / crystal — metallic gold strokes */
+function VaultMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden>
+      <defs>
+        <linearGradient id="vaultMarkGold" x1="8" y1="6" x2="34" y2="36" gradientUnits="userSpaceOnUse">
+          <stop stopColor="hsl(38, 42%, 78%)" />
+          <stop offset="0.45" stopColor="hsl(34, 32%, 58%)" />
+          <stop offset="1" stopColor="hsl(30, 28%, 42%)" />
+        </linearGradient>
+      </defs>
+      <rect x="5" y="5" width="30" height="30" rx="7" stroke="url(#vaultMarkGold)" strokeWidth="1.35" />
+      <rect x="9" y="9" width="22" height="22" rx="5" stroke="url(#vaultMarkGold)" strokeWidth="0.9" opacity="0.55" />
+      <path
+        d="M20 12.5c-3.2 0-5.8 2.2-5.8 5 0 2.1 1.4 3.8 3.4 4.5L20 27l2.4-5c2-0.7 3.4-2.4 3.4-4.5 0-2.8-2.6-5-5.8-5Z"
+        stroke="url(#vaultMarkGold)"
+        strokeWidth="1.1"
+        strokeLinejoin="round"
+        fill="none"
+        opacity="0.95"
+      />
+      <path d="M20 22.2v4.8" stroke="url(#vaultMarkGold)" strokeWidth="1" strokeLinecap="round" opacity="0.75" />
+    </svg>
+  );
+}
+
+function CurrencySelect({
+  value,
+  onChange,
+}: {
+  value: CollectionCurrency;
+  onChange: (c: CollectionCurrency) => void;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (isCollectionCurrency(v)) onChange(v);
+        }}
+        aria-label="Collection currency"
+        className={classNames(
+          "w-full cursor-pointer appearance-none rounded-xl border-2 border-[hsla(34,26%,44%,0.88)] bg-black/45 py-2.5 pl-3 pr-10 text-sm text-white/92 outline-none transition",
+          "hover:border-[hsla(32,30%,52%,0.95)] focus:border-[hsla(33,30%,52%,0.95)] focus:ring-2 focus:ring-[hsla(34,32%,42%,0.45)] focus:ring-offset-2 focus:ring-offset-[#070708]",
+        )}
+      >
+        {CURRENCIES.map((c) => (
+          <option key={c.code} value={c.code} className="bg-[#0c0c0f] text-white">
+            {c.label}
+          </option>
+        ))}
+      </select>
+      <span
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[hsla(36,24%,58%,0.88)]"
+        aria-hidden
+      >
+        ▾
+      </span>
+    </div>
+  );
+}
+
 function Placeholder() {
   return (
     <div
@@ -69,22 +179,16 @@ function Placeholder() {
   );
 }
 
-function formatGBP(value: number) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
 function WatchCard({
   watch,
   onDelete,
   onEdit,
+  currency,
 }: {
   watch: Watch;
   onDelete: (id: string) => void;
   onEdit: (watch: Watch) => void;
+  currency: CollectionCurrency;
 }) {
   return (
     <div
@@ -147,7 +251,9 @@ function WatchCard({
             {watch.reference ? <span className={gold.tag}>Ref. {watch.reference}</span> : null}
             {watch.year ? <span className={gold.tag}>Year {watch.year}</span> : null}
             {typeof watch.estimatedValue === "number" ? (
-              <span className={gold.tag}>Estimated Value: {formatGBP(watch.estimatedValue)}</span>
+              <span className={gold.tag}>
+                Estimated Value: {formatCollectionCurrency(watch.estimatedValue, currency)}
+              </span>
             ) : null}
           </div>
         )}
@@ -172,6 +278,7 @@ export default function Page() {
   });
   const [isMounted, setIsMounted] = useState(false);
   const [editingWatchId, setEditingWatchId] = useState<string | null>(null);
+  const [collectionCurrency, setCollectionCurrency] = useState<CollectionCurrency>(DEFAULT_CURRENCY);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -191,6 +298,11 @@ export default function Page() {
   const totalCollectionValue = useMemo(() => {
     return watches.reduce((sum, w) => sum + (typeof w.estimatedValue === "number" ? w.estimatedValue : 0), 0);
   }, [watches]);
+
+  const estimatedFieldLabel = useMemo(() => {
+    const entry = CURRENCIES.find((c) => c.code === collectionCurrency);
+    return `Estimated value (${entry?.label ?? collectionCurrency})`;
+  }, [collectionCurrency]);
 
   const mostCommonBrand = useMemo(() => {
     if (watches.length === 0) return undefined;
@@ -213,12 +325,27 @@ export default function Page() {
 
   useEffect(() => {
     setIsMounted(true);
+    try {
+      const raw = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
+      if (raw && isCollectionCurrency(raw)) setCollectionCurrency(raw);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("watchvault-watches", JSON.stringify(watches));
   }, [watches]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(CURRENCY_STORAGE_KEY, collectionCurrency);
+    } catch {
+      /* ignore */
+    }
+  }, [collectionCurrency]);
 
   const onPickPhoto = useCallback(
     (file: File | null) => {
@@ -332,22 +459,33 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b-2 border-[hsla(34,28%,42%,0.82)] bg-black/45 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 border-b-2 border-[hsla(34,28%,42%,0.82)] bg-black/50 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:py-5">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <div
               className={classNames(
-                "h-9 w-9 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.02]",
+                "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-black/50 to-black/30 sm:h-[52px] sm:w-[52px]",
                 gold.frame,
               )}
-            />
-            <div>
-              <p className="text-sm font-semibold tracking-wide">WatchVault</p>
-              <p className="text-[11px] text-white/55">Private. Local. Yours.</p>
+            >
+              <VaultMark className="h-7 w-7 sm:h-9 sm:w-9" />
+            </div>
+            <div className="min-w-0">
+              <p
+                className={classNames(
+                  vaultSerif.className,
+                  "bg-gradient-to-b from-[hsla(38,38%,92%,0.98)] via-[hsla(36,30%,72%,0.92)] to-[hsla(34,28%,52%,0.88)] bg-clip-text text-2xl font-semibold leading-[1.1] tracking-[0.04em] text-transparent sm:text-[1.85rem] sm:tracking-[0.06em]",
+                )}
+              >
+                WatchVault
+              </p>
+              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-[hsla(36,14%,58%,0.55)] sm:text-[11px]">
+                Private. Local. Yours.
+              </p>
             </div>
           </div>
 
-          <nav className="flex items-center gap-2">
+          <nav className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" })}
@@ -401,11 +539,21 @@ export default function Page() {
                 <p className="text-xs tracking-wide text-white/55">Saved locally in this browser.</p>
                 <p className="text-xs tracking-wide text-white/45">Saved watches: {isMounted ? watches.length : "—"}</p>
                 <p className="text-xs tracking-wide text-white/45">
-                  Total Collection Value: {isMounted ? formatGBP(totalCollectionValue) : "—"}
+                  Total Collection Value:{" "}
+                  {isMounted ? formatCollectionCurrency(totalCollectionValue, collectionCurrency) : "—"}
                 </p>
               </div>
 
               <div className={classNames("mt-6 grid gap-3 rounded-2xl p-4 sm:max-w-xl", gold.frameLg)}>
+                <div className="border-b border-[hsla(34,26%,40%,0.45)] pb-3">
+                  <p className="text-[11px] tracking-widest text-white/50">COLLECTION CURRENCY</p>
+                  <p className="mt-1 text-[10px] leading-relaxed text-white/38">
+                    Display and entry currency. Values are not converted when you switch.
+                  </p>
+                  <div className="mt-2">
+                    <CurrencySelect value={collectionCurrency} onChange={setCollectionCurrency} />
+                  </div>
+                </div>
                 <p className="text-[11px] tracking-widest text-white/55">COLLECTION STATISTICS</p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   <div className={gold.statCell}>
@@ -421,7 +569,7 @@ export default function Page() {
                   <div className={gold.statCell}>
                     <p className="text-[11px] tracking-widest text-white/45">TOTAL VALUE</p>
                     <p className="mt-1 text-sm font-semibold text-white/90">
-                      {isMounted ? formatGBP(totalCollectionValue) : "—"}
+                      {isMounted ? formatCollectionCurrency(totalCollectionValue, collectionCurrency) : "—"}
                     </p>
                   </div>
                 </div>
@@ -452,9 +600,7 @@ export default function Page() {
                     <div className="mt-4 flex flex-wrap gap-2">
                       <span className={gold.tag}>Ref. {reference || "—"}</span>
                       <span className={gold.tag}>Year {year || "—"}</span>
-                      <span className={gold.tag}>
-                        Value {estimatedValue ? `£${estimatedValue.replace(/[^\d]/g, "")}` : "—"}
-                      </span>
+                      <span className={gold.tag}>Value {previewValueDisplay(estimatedValue, collectionCurrency)}</span>
                     </div>
                     <p className="mt-4 line-clamp-2 text-xs leading-relaxed text-white/55">{notes || "Notes…"}</p>
                   </div>
@@ -525,7 +671,7 @@ export default function Page() {
               </label>
 
               <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Estimated value (£)</span>
+                <span className="text-xs tracking-wide text-white/55">{estimatedFieldLabel}</span>
                 <input
                   value={estimatedValue}
                   onChange={(e) => setEstimatedValue(e.target.value)}
@@ -618,7 +764,13 @@ export default function Page() {
           ) : (
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {watches.map((w) => (
-                <WatchCard key={w.id} watch={w} onDelete={onDeleteWatch} onEdit={onStartEdit} />
+                <WatchCard
+                  key={w.id}
+                  watch={w}
+                  onDelete={onDeleteWatch}
+                  onEdit={onStartEdit}
+                  currency={collectionCurrency}
+                />
               ))}
             </div>
           )}
