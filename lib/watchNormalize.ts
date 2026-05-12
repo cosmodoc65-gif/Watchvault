@@ -66,11 +66,57 @@ function isWatchBoxPapers(v: unknown): v is WatchBoxPapers {
   return typeof v === "string" && ALL_WATCH_BOXPAPERS.includes(v as WatchBoxPapers);
 }
 
+/** Primary key for persisted watch list (unchanged across WatchVault versions). */
+export const WATCHES_STORAGE_KEY = "watchvault-watches";
+
+/** Older experiments / forks — only used if canonical key yields no watches after normalize. */
+export const LEGACY_WATCH_STORAGE_KEYS = ["watchvault_watches", "watchvault-watches-v0"] as const;
+
+function parseNumericField(v: unknown): number | undefined {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v.replace(/[^\d.-]/g, ""));
+    if (Number.isFinite(n)) return n;
+  }
+  return undefined;
+}
+
+/**
+ * Coerce older localStorage shapes so `normalizeWatch` can succeed.
+ * Does not remove unknown fields (normalizeWatch ignores them).
+ */
+export function coerceLegacyWatchRecord(record: Record<string, unknown>, fallbackCreatedAt: number): Record<string, unknown> {
+  const w = { ...record };
+
+  if (typeof w.createdAt === "number" && Number.isFinite(w.createdAt)) {
+    /* keep */
+  } else if (typeof w.createdAt === "string" && w.createdAt.trim()) {
+    const t = Date.parse(w.createdAt);
+    w.createdAt = Number.isFinite(t) ? t : fallbackCreatedAt;
+  } else {
+    w.createdAt = fallbackCreatedAt;
+  }
+
+  if (typeof w.year === "number" && Number.isFinite(w.year)) w.year = String(Math.trunc(w.year));
+
+  const est = parseNumericField(w.estimatedValue);
+  if (est !== undefined) w.estimatedValue = est;
+
+  const pur = parseNumericField(w.purchasePrice);
+  if (pur !== undefined) w.purchasePrice = pur;
+
+  if (typeof w.brand !== "string" && w.brand != null) w.brand = String(w.brand);
+  if (typeof w.model !== "string" && w.model != null) w.model = String(w.model);
+  if (typeof w.id !== "string" && w.id != null) w.id = String(w.id);
+
+  return w;
+}
+
 export function normalizeWatch(raw: unknown): Watch | null {
   if (!raw || typeof raw !== "object") return null;
   const w = raw as Record<string, unknown>;
   if (typeof w.id !== "string" || typeof w.brand !== "string" || typeof w.model !== "string") return null;
-  if (typeof w.createdAt !== "number") return null;
+  if (typeof w.createdAt !== "number" || !Number.isFinite(w.createdAt)) return null;
 
   return {
     id: w.id,
@@ -95,7 +141,76 @@ export function normalizeWatch(raw: unknown): Watch | null {
 
 export function normalizeWatchList(raw: unknown): Watch[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map(normalizeWatch).filter(Boolean) as Watch[];
+  const t0 = Date.now();
+  const seen = new Set<string>();
+  const out: Watch[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i];
+    if (!item || typeof item !== "object") continue;
+    const rec = item as Record<string, unknown>;
+    let w = normalizeWatch(rec);
+    if (!w) {
+      const coerced = coerceLegacyWatchRecord(rec, t0 - i);
+      w = normalizeWatch(coerced);
+    }
+    if (!w) continue;
+    if (seen.has(w.id)) continue;
+    seen.add(w.id);
+    out.push(w);
+  }
+  return out;
+}
+
+/**
+ * Read watch list from localStorage (primary + legacy keys).
+ * First key whose value normalizes to a non-empty list wins.
+ * Does not write or clear anything.
+ */
+export function readWatchListJsonFromLocalStorage(): { watches: Watch[]; sourceKey: string } | null {
+  if (typeof window === "undefined") return null;
+
+  const tryParse = (key: string): unknown | null => {
+    const s = window.localStorage.getItem(key);
+    if (!s || !s.trim()) return null;
+    try {
+      return JSON.parse(s) as unknown;
+    } catch {
+      return null;
+    }
+  };
+
+  const orderedKeys = [WATCHES_STORAGE_KEY, ...LEGACY_WATCH_STORAGE_KEYS] as const;
+  for (const key of orderedKeys) {
+    const raw = tryParse(key);
+    if (raw === null) continue;
+    const watches = normalizeWatchList(raw);
+    if (watches.length > 0) {
+      return { watches, sourceKey: key };
+    }
+  }
+
+  const primary = tryParse(WATCHES_STORAGE_KEY);
+  if (primary !== null) {
+    return { watches: normalizeWatchList(primary), sourceKey: WATCHES_STORAGE_KEY };
+  }
+  return null;
+}
+
+/** Load and migrate watches from localStorage (browser only). */
+export function loadWatchesFromLocalStorage(): Watch[] {
+  if (typeof window === "undefined") return [];
+  const parsed = readWatchListJsonFromLocalStorage();
+  if (!parsed) return [];
+  const { watches, sourceKey } = parsed;
+  if (watches.length > 0 && sourceKey !== WATCHES_STORAGE_KEY) {
+    try {
+      window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
+    } catch {
+      /* caller may surface storage full */
+    }
+  }
+  return watches;
 }
 
 export type BackupPayload = {
@@ -129,7 +244,10 @@ export function parseBackupJson(text: string): ParsedBackup | null {
       const b64 = typeof r.photoExportBase64 === "string" ? r.photoExportBase64 : undefined;
       const rest = { ...r };
       delete rest.photoExportBase64;
-      const nw = normalizeWatch(rest);
+      let nw = normalizeWatch(rest);
+      if (!nw) {
+        nw = normalizeWatch(coerceLegacyWatchRecord(rest, Date.now()));
+      }
       if (!nw) return null;
       watches.push(nw);
       if (b64) embeddedPhotos.push({ watchId: nw.id, base64: b64 });

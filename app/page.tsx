@@ -16,8 +16,9 @@ import {
   type Watch,
   type WatchBoxPapers,
   type WatchCondition,
-  normalizeWatchList,
   parseBackupJson,
+  loadWatchesFromLocalStorage,
+  WATCHES_STORAGE_KEY,
 } from "@/lib/watchNormalize";
 import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/watchVaultIdb";
 
@@ -620,15 +621,8 @@ function WatchDetailPanel({
 }
 
 export default function Page() {
-  const [watches, setWatches] = useState<Watch[]>(() => {
-    if (typeof window === "undefined") return [];
-    const saved = window.localStorage.getItem("watchvault-watches");
-    try {
-      return saved ? normalizeWatchList(JSON.parse(saved)) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const [watchesHydrated, setWatchesHydrated] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [editingWatchId, setEditingWatchId] = useState<string | null>(null);
   const [collectionCurrency, setCollectionCurrency] = useState<CollectionCurrency>(DEFAULT_CURRENCY);
@@ -698,6 +692,14 @@ export default function Page() {
   }, [watches]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setWatches(loadWatchesFromLocalStorage());
+    } catch {
+      setWatches([]);
+    } finally {
+      setWatchesHydrated(true);
+    }
     setIsMounted(true);
     try {
       const raw = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
@@ -723,9 +725,9 @@ export default function Page() {
 
   const storageFullWarnedRef = useRef(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !watchesHydrated) return;
     try {
-      window.localStorage.setItem("watchvault-watches", JSON.stringify(watches));
+      window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
     } catch {
       if (!storageFullWarnedRef.current) {
         storageFullWarnedRef.current = true;
@@ -734,7 +736,7 @@ export default function Page() {
         );
       }
     }
-  }, [watches]);
+  }, [watches, watchesHydrated]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1673,7 +1675,7 @@ export default function Page() {
             </div>
           </div>
 
-          {!isMounted ? (
+          {!watchesHydrated ? (
             <div className={classNames("mt-6 rounded-3xl p-8 text-center text-sm text-white/62", gold.frameLg)}>
               Loading collection...
             </div>
