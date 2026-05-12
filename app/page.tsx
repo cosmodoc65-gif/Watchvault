@@ -1254,7 +1254,8 @@ export default function Page() {
               </h1>
               <p className="mt-4 max-w-xl text-pretty text-sm leading-relaxed text-white/65">
                 Add a watch, upload a photo, and keep your collection at a glance. WatchVault stores your collection locally
-                in this browser — no account, no cloud database. Export a backup if you want to keep a copy.
+                on this device and browser — private, with no account or cloud database. Export a backup to keep a copy or
+                carry your vault to another device.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -1277,7 +1278,8 @@ export default function Page() {
               <div className="mt-6 grid gap-1">
                 <p className="text-xs tracking-wide text-white/45">{isMounted ? collectionLabel : "Loading collection..."}</p>
                 <p className="text-xs tracking-wide text-white/55">
-                  Your collection is stored locally in this browser. Export a backup regularly.
+                  Your collection stays on this device and browser. Export a backup to open it elsewhere — nothing syncs
+                  automatically.
                 </p>
                 <p className="text-xs tracking-wide text-white/45">Saved watches: {isMounted ? watches.length : "—"}</p>
                 <p className="text-xs tracking-wide text-white/45">
@@ -1384,8 +1386,9 @@ export default function Page() {
             <p className="text-[11px] tracking-widest text-white/55">BACKUP &amp; EXPORT</p>
             <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/92">Protect your vault</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/58">
-              Your collection is stored locally in this browser. Export a backup regularly. JSON backups include watch
-              details and embedded photos so you can restore on another device or browser.
+              Your collection is stored locally on this device and browser — private by design, no cloud. To use it on
+              another device, export a backup and import it there. Export regularly; JSON backups include watch details and
+              embedded photos for a full restore.
             </p>
             {watchStorageIssue && watches.length === 0 ? (
               <div
@@ -1467,6 +1470,9 @@ export default function Page() {
                 Export collection PDF
               </button>
             </div>
+            <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-white/44">
+              WatchVault does not currently sync between devices.
+            </p>
             {showSubtleNeverExportedBackupCue ? (
               <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/42">
                 You have several watches saved here, and no JSON export is on record in this browser yet. When it suits you,
@@ -1816,8 +1822,9 @@ export default function Page() {
 
         <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(34,26%,36%,0.55)] px-4 pb-16 pt-10">
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
-            WatchVault stores your collection locally in this browser. No account, no cloud database. Export a backup if you
-            want to keep a copy.
+            WatchVault stores your collection locally on this device and browser — private, with no account or cloud
+            database. Watches added here do not appear on other devices by themselves; export a backup and import it where
+            you want your vault to live next.
           </p>
           <a
             href={FEEDBACK_MAILTO}
