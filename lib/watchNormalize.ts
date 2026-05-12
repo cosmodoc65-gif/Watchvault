@@ -1,3 +1,5 @@
+import { LEGACY_WATCH_STORAGE_KEYS, WATCHES_STORAGE_KEY } from "@/lib/watchStorageKeys";
+
 export type WatchCondition = "new" | "excellent" | "very_good" | "good" | "fair" | "needs_attention";
 
 export type WatchBoxPapers = "full_set" | "box_only" | "papers_only" | "watch_only" | "unknown";
@@ -66,11 +68,7 @@ function isWatchBoxPapers(v: unknown): v is WatchBoxPapers {
   return typeof v === "string" && ALL_WATCH_BOXPAPERS.includes(v as WatchBoxPapers);
 }
 
-/** Primary key for persisted watch list (unchanged across WatchVault versions). */
-export const WATCHES_STORAGE_KEY = "watchvault-watches";
-
-/** Older experiments / forks — only used if canonical key yields no watches after normalize. */
-export const LEGACY_WATCH_STORAGE_KEYS = ["watchvault_watches", "watchvault-watches-v0"] as const;
+export { LEGACY_WATCH_STORAGE_KEYS, WATCHES_STORAGE_KEY } from "@/lib/watchStorageKeys";
 
 function parseNumericField(v: unknown): number | undefined {
   if (typeof v === "number" && Number.isFinite(v)) return v;
@@ -162,55 +160,165 @@ export function normalizeWatchList(raw: unknown): Watch[] {
   return out;
 }
 
-/**
- * Read watch list from localStorage (primary + legacy keys).
- * First key whose value normalizes to a non-empty list wins.
- * Does not write or clear anything.
- */
-export function readWatchListJsonFromLocalStorage(): { watches: Watch[]; sourceKey: string } | null {
+function readNonEmptyLocalStorageValue(key: string): string | null {
   if (typeof window === "undefined") return null;
-
-  const tryParse = (key: string): unknown | null => {
-    const s = window.localStorage.getItem(key);
-    if (!s || !s.trim()) return null;
-    try {
-      return JSON.parse(s) as unknown;
-    } catch {
-      return null;
-    }
-  };
-
-  const orderedKeys = [WATCHES_STORAGE_KEY, ...LEGACY_WATCH_STORAGE_KEYS] as const;
-  for (const key of orderedKeys) {
-    const raw = tryParse(key);
-    if (raw === null) continue;
-    const watches = normalizeWatchList(raw);
-    if (watches.length > 0) {
-      return { watches, sourceKey: key };
-    }
-  }
-
-  const primary = tryParse(WATCHES_STORAGE_KEY);
-  if (primary !== null) {
-    return { watches: normalizeWatchList(primary), sourceKey: WATCHES_STORAGE_KEY };
-  }
-  return null;
+  const s = window.localStorage.getItem(key);
+  return s && s.trim() ? s : null;
 }
 
-/** Load and migrate watches from localStorage (browser only). */
-export function loadWatchesFromLocalStorage(): Watch[] {
-  if (typeof window === "undefined") return [];
-  const parsed = readWatchListJsonFromLocalStorage();
-  if (!parsed) return [];
-  const { watches, sourceKey } = parsed;
-  if (watches.length > 0 && sourceKey !== WATCHES_STORAGE_KEY) {
+function logWatchVaultStorageDev(info: Record<string, unknown>) {
+  if (process.env.NODE_ENV === "development") {
+    console.info("[WatchVault storage]", info);
+  }
+}
+
+export type WatchStorageLoadIssue =
+  | { kind: "invalid_json"; key: string }
+  | { kind: "unreadable_entries"; key: string; skippedCount: number };
+
+export type LoadWatchesFromLocalStorageResult = {
+  watches: Watch[];
+  /** Storage key that supplied the loaded list, or null if nothing usable was found. */
+  sourceKey: string | null;
+  migrationPerformed: boolean;
+  /**
+   * When true, do not persist an empty watch list — avoids overwriting recoverable or invalid raw data.
+   * Clears once the in-memory collection has at least one watch.
+   */
+  blockEmptyPersist: boolean;
+  issue: WatchStorageLoadIssue | null;
+};
+
+const emptyLoadResult: LoadWatchesFromLocalStorageResult = {
+  watches: [],
+  sourceKey: null,
+  migrationPerformed: false,
+  blockEmptyPersist: false,
+  issue: null,
+};
+
+export function watchStorageIssueUserMessage(issue: WatchStorageLoadIssue): string {
+  if (issue.kind === "invalid_json") {
+    return `Your saved collection could not be read. The raw data is still in this browser under “${issue.key}” — it was not deleted. Try importing a JSON backup, or ask someone technical to repair the stored text.`;
+  }
+  return `${issue.skippedCount} saved ${issue.skippedCount === 1 ? "entry" : "entries"} could not be read. The original data is still stored locally — try a JSON backup import, or remove the broken entries manually via devtools if you know how.`;
+}
+
+/** Load and migrate watches from localStorage (browser only). Legacy keys are never removed. */
+export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult {
+  if (typeof window === "undefined") {
+    return { ...emptyLoadResult };
+  }
+
+  const orderedKeys = [WATCHES_STORAGE_KEY, ...LEGACY_WATCH_STORAGE_KEYS] as const;
+  let primaryParseFailedInScan = false;
+
+  for (const key of orderedKeys) {
+    const rawStr = readNonEmptyLocalStorageValue(key);
+    if (!rawStr) continue;
+    let parsed: unknown;
     try {
-      window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
+      parsed = JSON.parse(rawStr) as unknown;
     } catch {
-      /* caller may surface storage full */
+      if (key === WATCHES_STORAGE_KEY) primaryParseFailedInScan = true;
+      continue;
+    }
+    const watches = normalizeWatchList(parsed);
+    if (watches.length > 0) {
+      const migrationPerformed = key !== WATCHES_STORAGE_KEY;
+      if (migrationPerformed) {
+        try {
+          window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
+        } catch {
+          /* migration copy failed; in-memory list is still valid */
+        }
+      }
+      logWatchVaultStorageDev({
+        storageKeyUsed: key,
+        watchesLoaded: watches.length,
+        migrationPerformed,
+      });
+      return {
+        watches,
+        sourceKey: key,
+        migrationPerformed,
+        blockEmptyPersist: false,
+        issue: null,
+      };
     }
   }
-  return watches;
+
+  const primaryStr = readNonEmptyLocalStorageValue(WATCHES_STORAGE_KEY);
+  let primaryParsed: unknown | undefined = undefined;
+  let primaryJsonInvalid = primaryParseFailedInScan;
+
+  if (primaryStr && !primaryJsonInvalid) {
+    try {
+      primaryParsed = JSON.parse(primaryStr) as unknown;
+    } catch {
+      primaryJsonInvalid = true;
+    }
+  }
+
+  if (primaryJsonInvalid) {
+    logWatchVaultStorageDev({
+      storageKeyUsed: null,
+      watchesLoaded: 0,
+      migrationPerformed: false,
+      issue: "invalid_json_primary",
+    });
+    return {
+      watches: [],
+      sourceKey: null,
+      migrationPerformed: false,
+      blockEmptyPersist: true,
+      issue: { kind: "invalid_json", key: WATCHES_STORAGE_KEY },
+    };
+  }
+
+  if (primaryStr) {
+    const fromPrimary = normalizeWatchList(primaryParsed);
+    if (Array.isArray(primaryParsed) && primaryParsed.length > 0 && fromPrimary.length === 0) {
+      logWatchVaultStorageDev({
+        storageKeyUsed: WATCHES_STORAGE_KEY,
+        watchesLoaded: 0,
+        migrationPerformed: false,
+        issue: "unreadable_entries",
+        skippedCount: primaryParsed.length,
+      });
+      return {
+        watches: [],
+        sourceKey: WATCHES_STORAGE_KEY,
+        migrationPerformed: false,
+        blockEmptyPersist: true,
+        issue: {
+          kind: "unreadable_entries",
+          key: WATCHES_STORAGE_KEY,
+          skippedCount: primaryParsed.length,
+        },
+      };
+    }
+    logWatchVaultStorageDev({
+      storageKeyUsed: WATCHES_STORAGE_KEY,
+      watchesLoaded: fromPrimary.length,
+      migrationPerformed: false,
+    });
+    return {
+      watches: fromPrimary,
+      sourceKey: WATCHES_STORAGE_KEY,
+      migrationPerformed: false,
+      blockEmptyPersist: false,
+      issue: null,
+    };
+  }
+
+  logWatchVaultStorageDev({
+    storageKeyUsed: null,
+    watchesLoaded: 0,
+    migrationPerformed: false,
+    note: "no_saved_collection",
+  });
+  return { ...emptyLoadResult };
 }
 
 export type BackupPayload = {

@@ -16,10 +16,17 @@ import {
   type Watch,
   type WatchBoxPapers,
   type WatchCondition,
+  type WatchStorageLoadIssue,
   parseBackupJson,
   loadWatchesFromLocalStorage,
+  watchStorageIssueUserMessage,
   WATCHES_STORAGE_KEY,
 } from "@/lib/watchNormalize";
+import {
+  WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY,
+  WATCHVAULT_BACKUP_REMINDER_DAYS_KEY,
+  WATCHVAULT_COLLECTION_CURRENCY_KEY,
+} from "@/lib/watchStorageKeys";
 import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/watchVaultIdb";
 
 const FEEDBACK_MAILTO =
@@ -109,8 +116,6 @@ const vaultSerif = Cormorant_Garamond({
   weight: ["500", "600", "700"],
   display: "swap",
 });
-
-const CURRENCY_STORAGE_KEY = "watchvault-currency";
 
 const CURRENCIES: { code: CollectionCurrency; label: string }[] = [
   { code: "GBP", label: "GBP (£)" },
@@ -639,9 +644,9 @@ export default function Page() {
   const backupImportRef = useRef<HTMLInputElement>(null);
   const [backupReminderDays, setBackupReminderDays] = useState<0 | 7 | 30>(0);
   const [lastBackupExportedAt, setLastBackupExportedAt] = useState<number | null>(null);
-
-  const BACKUP_REMINDER_KEY = "watchvault-backup-reminder-days";
-  const BACKUP_LAST_EXPORTED_KEY = "watchvault-backup-last-exported-at";
+  const blockEmptyWatchListPersistRef = useRef(false);
+  const [watchStorageIssue, setWatchStorageIssue] = useState<WatchStorageLoadIssue | null>(null);
+  const [watchStorageIssueDismissed, setWatchStorageIssueDismissed] = useState(false);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -694,15 +699,20 @@ export default function Page() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      setWatches(loadWatchesFromLocalStorage());
+      const loaded = loadWatchesFromLocalStorage();
+      setWatches(loaded.watches);
+      setWatchStorageIssue(loaded.issue);
+      blockEmptyWatchListPersistRef.current = loaded.blockEmptyPersist;
     } catch {
       setWatches([]);
+      setWatchStorageIssue(null);
+      blockEmptyWatchListPersistRef.current = true;
     } finally {
       setWatchesHydrated(true);
     }
     setIsMounted(true);
     try {
-      const raw = window.localStorage.getItem(CURRENCY_STORAGE_KEY);
+      const raw = window.localStorage.getItem(WATCHVAULT_COLLECTION_CURRENCY_KEY);
       if (raw && isCollectionCurrency(raw)) setCollectionCurrency(raw);
     } catch {
       /* ignore */
@@ -712,10 +722,10 @@ export default function Page() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const rawDays = window.localStorage.getItem(BACKUP_REMINDER_KEY);
+      const rawDays = window.localStorage.getItem(WATCHVAULT_BACKUP_REMINDER_DAYS_KEY);
       const days = rawDays ? Number(rawDays) : 0;
       setBackupReminderDays(days === 7 || days === 30 ? days : 0);
-      const rawLast = window.localStorage.getItem(BACKUP_LAST_EXPORTED_KEY);
+      const rawLast = window.localStorage.getItem(WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY);
       const last = rawLast ? Number(rawLast) : NaN;
       setLastBackupExportedAt(Number.isFinite(last) && last > 0 ? last : null);
     } catch {
@@ -723,9 +733,18 @@ export default function Page() {
     }
   }, []);
 
+  useEffect(() => {
+    if (watches.length > 0) {
+      blockEmptyWatchListPersistRef.current = false;
+      setWatchStorageIssue(null);
+      setWatchStorageIssueDismissed(false);
+    }
+  }, [watches.length]);
+
   const storageFullWarnedRef = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined" || !watchesHydrated) return;
+    if (watches.length === 0 && blockEmptyWatchListPersistRef.current) return;
     try {
       window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
     } catch {
@@ -741,7 +760,7 @@ export default function Page() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(CURRENCY_STORAGE_KEY, collectionCurrency);
+      window.localStorage.setItem(WATCHVAULT_COLLECTION_CURRENCY_KEY, collectionCurrency);
     } catch {
       /* ignore */
     }
@@ -1060,6 +1079,9 @@ export default function Page() {
         }
         setImportPreview(null);
         setToastMessage("Backup imported successfully.");
+        setWatchStorageIssue(null);
+        setWatchStorageIssueDismissed(false);
+        blockEmptyWatchListPersistRef.current = false;
       } catch {
         setToastMessage("Import failed. Your collection was not changed.");
       }
@@ -1074,14 +1096,14 @@ export default function Page() {
       const now = Date.now();
       setLastBackupExportedAt(now);
       try {
-        window.localStorage.setItem(BACKUP_LAST_EXPORTED_KEY, String(now));
+        window.localStorage.setItem(WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY, String(now));
       } catch {
         /* ignore */
       }
     } catch {
       setToastMessage("Export failed. Try again with a smaller collection or fewer photos.");
     }
-  }, [watches, collectionCurrency, BACKUP_LAST_EXPORTED_KEY]);
+  }, [watches, collectionCurrency]);
 
   const onExportCsv = useCallback(() => {
     const csv = buildCollectionCsv(watches, collectionCurrency);
@@ -1124,18 +1146,23 @@ export default function Page() {
     }
   }, [lastBackupExportedAt]);
 
+  const showSubtleNeverExportedBackupCue = useMemo(
+    () => isMounted && watches.length > 1 && lastBackupExportedAt === null,
+    [isMounted, watches.length, lastBackupExportedAt],
+  );
+
   const setBackupReminder = useCallback(
     (days: 0 | 7 | 30) => {
       setBackupReminderDays(days);
       try {
-        window.localStorage.setItem(BACKUP_REMINDER_KEY, String(days));
+        window.localStorage.setItem(WATCHVAULT_BACKUP_REMINDER_DAYS_KEY, String(days));
       } catch {
         /* ignore */
       }
       if (days === 0) setToastMessage("Backup reminders turned off.");
       else setToastMessage(days === 7 ? "Backup reminder set: weekly." : "Backup reminder set: monthly.");
     },
-    [BACKUP_REMINDER_KEY],
+    [],
   );
 
   const onBackupFileChosen = useCallback(async (file: File | null) => {
@@ -1360,6 +1387,15 @@ export default function Page() {
               Your collection is stored locally in this browser. Export a backup regularly. JSON backups include watch
               details and embedded photos so you can restore on another device or browser.
             </p>
+            {watchStorageIssue && watches.length === 0 ? (
+              <div
+                className="mt-4 max-w-2xl rounded-2xl border border-amber-200/18 bg-amber-200/[0.06] px-4 py-3 text-sm leading-relaxed text-amber-50/88"
+                role="status"
+              >
+                <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Recovery</p>
+                <p className="mt-1.5 text-[13px] text-amber-50/90">{watchStorageIssueUserMessage(watchStorageIssue)}</p>
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-center">
               <div className="rounded-2xl border-2 border-[hsla(34,24%,44%,0.78)] bg-black/35 px-4 py-3">
                 <p className="text-[11px] tracking-widest text-white/50">BACKUP REMINDER</p>
@@ -1431,6 +1467,12 @@ export default function Page() {
                 Export collection PDF
               </button>
             </div>
+            {showSubtleNeverExportedBackupCue ? (
+              <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/42">
+                You have several watches saved here, and no JSON export is on record in this browser yet. When it suits you,
+                export a backup so you are not relying on this device alone.
+              </p>
+            ) : null}
             <p className="mt-4 text-[11px] leading-relaxed text-white/42">
               CSV export includes metadata only (no images): brand, model, reference, year, values, currency, condition, box
               / papers, notes, and service history. The PDF is a printable personal collection report with photos (generated
@@ -1678,6 +1720,39 @@ export default function Page() {
           {!watchesHydrated ? (
             <div className={classNames("mt-6 rounded-3xl p-8 text-center text-sm text-white/62", gold.frameLg)}>
               Loading collection...
+            </div>
+          ) : watchStorageIssue && watches.length === 0 && !watchStorageIssueDismissed ? (
+            <div className={classNames("mt-6 rounded-3xl p-8 sm:p-10", gold.frameLg)} role="alert">
+              <div className="mx-auto max-w-lg text-center">
+                <p className={classNames("mx-auto inline-flex rounded-full px-3 py-1 text-[11px] tracking-widest", gold.pill)}>
+                  STORAGE READ ISSUE
+                </p>
+                <p className="mt-5 text-lg font-semibold tracking-tight text-white/92">We could not load your saved watches</p>
+                <p className="mt-3 text-sm leading-relaxed text-white/62">{watchStorageIssueUserMessage(watchStorageIssue)}</p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    type="button"
+                    onClick={() => backupImportRef.current?.click()}
+                    className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnPrimary)}
+                  >
+                    Import JSON backup
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
+                    className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnSecondary)}
+                  >
+                    Add a watch (new collection)
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWatchStorageIssueDismissed(true)}
+                  className="mt-6 text-xs tracking-wide text-white/45 underline decoration-white/25 underline-offset-4 hover:text-white/70"
+                >
+                  Dismiss this notice
+                </button>
+              </div>
             </div>
           ) : watches.length === 0 ? (
             <div className={classNames("mt-6 rounded-3xl p-8 sm:p-10", gold.frameLg)}>
