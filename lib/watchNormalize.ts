@@ -204,8 +204,10 @@ export function watchStorageIssueUserMessage(issue: WatchStorageLoadIssue): stri
   return `${issue.skippedCount} saved ${issue.skippedCount === 1 ? "entry" : "entries"} could not be read. The original data is still stored locally — try a JSON backup import, or remove the broken entries manually via devtools if you know how.`;
 }
 
-/** Load and migrate watches from localStorage (browser only). Legacy keys are never removed. */
-export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult {
+/**
+ * Read watch list from localStorage only (no writes). Scans canonical + legacy keys.
+ */
+export function readWatchCollectionFromLocalStorage(): LoadWatchesFromLocalStorageResult {
   if (typeof window === "undefined") {
     return { ...emptyLoadResult };
   }
@@ -225,23 +227,16 @@ export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult
     }
     const watches = normalizeWatchList(parsed);
     if (watches.length > 0) {
-      const migrationPerformed = key !== WATCHES_STORAGE_KEY;
-      if (migrationPerformed) {
-        try {
-          window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
-        } catch {
-          /* migration copy failed; in-memory list is still valid */
-        }
-      }
       logWatchVaultStorageDev({
         storageKeyUsed: key,
         watchesLoaded: watches.length,
-        migrationPerformed,
+        migrationPerformed: false,
+        source: "localStorage-scan",
       });
       return {
         watches,
         sourceKey: key,
-        migrationPerformed,
+        migrationPerformed: false,
         blockEmptyPersist: false,
         issue: null,
       };
@@ -266,6 +261,7 @@ export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult
       watchesLoaded: 0,
       migrationPerformed: false,
       issue: "invalid_json_primary",
+      source: "localStorage-scan",
     });
     return {
       watches: [],
@@ -285,6 +281,7 @@ export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult
         migrationPerformed: false,
         issue: "unreadable_entries",
         skippedCount: primaryParsed.length,
+        source: "localStorage-scan",
       });
       return {
         watches: [],
@@ -302,6 +299,7 @@ export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult
       storageKeyUsed: WATCHES_STORAGE_KEY,
       watchesLoaded: fromPrimary.length,
       migrationPerformed: false,
+      source: "localStorage-scan",
     });
     return {
       watches: fromPrimary,
@@ -316,9 +314,24 @@ export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult
     storageKeyUsed: null,
     watchesLoaded: 0,
     migrationPerformed: false,
-    note: "no_saved_collection",
+    note: "no_saved_collection_localStorage",
+    source: "localStorage-scan",
   });
   return { ...emptyLoadResult };
+}
+
+/** Load from localStorage and copy legacy lists into the canonical localStorage key (does not touch IndexedDB). */
+export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult {
+  const r = readWatchCollectionFromLocalStorage();
+  if (r.watches.length > 0 && r.sourceKey && r.sourceKey !== WATCHES_STORAGE_KEY && typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(r.watches));
+    } catch {
+      /* migration copy failed */
+    }
+    return { ...r, migrationPerformed: true };
+  }
+  return r;
 }
 
 export type BackupPayload = {

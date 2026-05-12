@@ -7,7 +7,12 @@
 export const WATCHES_STORAGE_KEY = "watchvault-watches";
 
 /** Older keys — read for migration only; never delete automatically. */
-export const LEGACY_WATCH_STORAGE_KEYS = ["watchvault_watches", "watchvault-watches-v0"] as const;
+export const LEGACY_WATCH_STORAGE_KEYS = [
+  "watchvault_watches",
+  "watchvault-watches-v0",
+  "watchvault-watches-backup",
+  "watchvault-collection-ls",
+] as const;
 
 export const WATCHVAULT_BACKUP_REMINDER_DAYS_KEY = "watchvault-backup-reminder-days";
 export const WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY = "watchvault-backup-last-exported-at";

@@ -6,6 +6,7 @@ import { base64ToBlob } from "@/lib/backupEncoding";
 import { compressImageFile } from "@/lib/imageCompress";
 import { buildBackupJsonString, buildCollectionCsv } from "@/lib/backupFormats";
 import { downloadWatchVaultCollectionPdf } from "@/lib/collectionPdf";
+import { loadWatchesFromAllSources, persistWatchCollection } from "@/lib/watchCollectionStorage";
 import {
   ALL_WATCH_BOXPAPERS,
   ALL_WATCH_CONDITIONS,
@@ -18,9 +19,7 @@ import {
   type WatchCondition,
   type WatchStorageLoadIssue,
   parseBackupJson,
-  loadWatchesFromLocalStorage,
   watchStorageIssueUserMessage,
-  WATCHES_STORAGE_KEY,
 } from "@/lib/watchNormalize";
 import {
   WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY,
@@ -647,6 +646,9 @@ export default function Page() {
   const blockEmptyWatchListPersistRef = useRef(false);
   const [watchStorageIssue, setWatchStorageIssue] = useState<WatchStorageLoadIssue | null>(null);
   const [watchStorageIssueDismissed, setWatchStorageIssueDismissed] = useState(false);
+  const [indexedDbUnavailable, setIndexedDbUnavailable] = useState(false);
+  const [noWatchDataFound, setNoWatchDataFound] = useState(false);
+  const [collectionPersistenceWarning, setCollectionPersistenceWarning] = useState<string | null>(null);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -698,18 +700,29 @@ export default function Page() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      const loaded = loadWatchesFromLocalStorage();
-      setWatches(loaded.watches);
-      setWatchStorageIssue(loaded.issue);
-      blockEmptyWatchListPersistRef.current = loaded.blockEmptyPersist;
-    } catch {
-      setWatches([]);
-      setWatchStorageIssue(null);
-      blockEmptyWatchListPersistRef.current = true;
-    } finally {
-      setWatchesHydrated(true);
-    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const loaded = await loadWatchesFromAllSources();
+        if (cancelled) return;
+        setCollectionPersistenceWarning(null);
+        setWatches(loaded.watches);
+        setWatchStorageIssue(loaded.issue);
+        blockEmptyWatchListPersistRef.current = loaded.blockEmptyPersist;
+        setIndexedDbUnavailable(loaded.indexedDbUnavailable);
+        setNoWatchDataFound(loaded.noWatchDataFound);
+      } catch {
+        if (cancelled) return;
+        setWatches([]);
+        setWatchStorageIssue(null);
+        blockEmptyWatchListPersistRef.current = true;
+        setIndexedDbUnavailable(false);
+        setNoWatchDataFound(false);
+        setCollectionPersistenceWarning(null);
+      } finally {
+        if (!cancelled) setWatchesHydrated(true);
+      }
+    })();
     setIsMounted(true);
     try {
       const raw = window.localStorage.getItem(WATCHVAULT_COLLECTION_CURRENCY_KEY);
@@ -717,6 +730,9 @@ export default function Page() {
     } catch {
       /* ignore */
     }
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -738,6 +754,7 @@ export default function Page() {
       blockEmptyWatchListPersistRef.current = false;
       setWatchStorageIssue(null);
       setWatchStorageIssueDismissed(false);
+      setNoWatchDataFound(false);
     }
   }, [watches.length]);
 
@@ -745,16 +762,45 @@ export default function Page() {
   useEffect(() => {
     if (typeof window === "undefined" || !watchesHydrated) return;
     if (watches.length === 0 && blockEmptyWatchListPersistRef.current) return;
-    try {
-      window.localStorage.setItem(WATCHES_STORAGE_KEY, JSON.stringify(watches));
-    } catch {
-      if (!storageFullWarnedRef.current) {
-        storageFullWarnedRef.current = true;
-        setToastMessage(
-          "Could not save metadata to browser storage (it may be full). Export a backup, then remove notes or use fewer large inline photos.",
+    let cancelled = false;
+    void (async () => {
+      const r = await persistWatchCollection(watches, {
+        blockEmptyWrite: watches.length === 0 && blockEmptyWatchListPersistRef.current,
+      });
+      if (cancelled) return;
+
+      if (r.primaryWritten === "none" && watches.length > 0) {
+        setCollectionPersistenceWarning(
+          "Your collection could not be saved to browser storage. Export a JSON backup immediately, then try freeing space or another browser.",
         );
+        if (!storageFullWarnedRef.current) {
+          storageFullWarnedRef.current = true;
+          setToastMessage("Could not save your collection. Export a JSON backup now.");
+        }
+        return;
       }
-    }
+
+      if (r.primaryWritten === "localStorage") {
+        setCollectionPersistenceWarning(
+          r.indexedDbTried
+            ? "IndexedDB could not be used for the main vault store; your collection was saved using browser storage, which mobile Safari may clear. Export a JSON backup regularly."
+            : "IndexedDB is not available in this browser profile; your collection is stored in browser storage only. Export a JSON backup regularly — especially on iPhone.",
+        );
+      } else if (r.primaryWritten === "indexeddb" && !r.localStorageMirrorOk) {
+        setCollectionPersistenceWarning(
+          "Saved to IndexedDB, but a backup copy in localStorage failed (often storage quota). Export a JSON backup periodically.",
+        );
+      } else {
+        setCollectionPersistenceWarning(null);
+      }
+
+      if (r.errorMessage && r.primaryWritten !== "none") {
+        /* non-fatal: user already has primaryWritten */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [watches, watchesHydrated]);
 
   useEffect(() => {
@@ -1082,6 +1128,7 @@ export default function Page() {
         setWatchStorageIssue(null);
         setWatchStorageIssueDismissed(false);
         blockEmptyWatchListPersistRef.current = false;
+        setCollectionPersistenceWarning(null);
       } catch {
         setToastMessage("Import failed. Your collection was not changed.");
       }
@@ -1147,7 +1194,7 @@ export default function Page() {
   }, [lastBackupExportedAt]);
 
   const showSubtleNeverExportedBackupCue = useMemo(
-    () => isMounted && watches.length > 1 && lastBackupExportedAt === null,
+    () => isMounted && watches.length >= 1 && lastBackupExportedAt === null,
     [isMounted, watches.length, lastBackupExportedAt],
   );
 
@@ -1245,6 +1292,35 @@ export default function Page() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4">
+        {watchesHydrated && indexedDbUnavailable && !collectionPersistenceWarning ? (
+          <div className="pt-4" role="status">
+            <div
+              className={classNames(
+                "rounded-2xl border border-amber-200/18 bg-amber-200/[0.06] px-4 py-3 text-[13px] leading-relaxed text-amber-50/88",
+                gold.frameLg,
+              )}
+            >
+              <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Storage</p>
+              <p className="mt-1.5">
+                Encrypted vault storage (IndexedDB) is not available in this browser profile. WatchVault will use local
+                storage only — export a JSON backup regularly, especially on iPhone.
+              </p>
+            </div>
+          </div>
+        ) : null}
+        {watchesHydrated && collectionPersistenceWarning ? (
+          <div className="pt-4" role="alert">
+            <div
+              className={classNames(
+                "rounded-2xl border border-amber-200/22 bg-amber-200/[0.07] px-4 py-3 text-[13px] leading-relaxed text-amber-50/92",
+                gold.frameLg,
+              )}
+            >
+              <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Save notice</p>
+              <p className="mt-1.5">{collectionPersistenceWarning}</p>
+            </div>
+          </div>
+        ) : null}
         <section className="pb-10 pt-12 sm:pt-16">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
@@ -1390,6 +1466,14 @@ export default function Page() {
               another device, export a backup and import it there. Export regularly; JSON backups include watch details and
               embedded photos for a full restore.
             </p>
+            <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/44">
+              WatchVault stores your collection locally on this device/browser. Mobile browsers may remove local website
+              data. Export a backup regularly.
+            </p>
+            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/44">
+              To use your collection on another device, export a backup and import it there. WatchVault does not currently sync
+              between devices.
+            </p>
             {watchStorageIssue && watches.length === 0 ? (
               <div
                 className="mt-4 max-w-2xl rounded-2xl border border-amber-200/18 bg-amber-200/[0.06] px-4 py-3 text-sm leading-relaxed text-amber-50/88"
@@ -1474,10 +1558,18 @@ export default function Page() {
               WatchVault does not currently sync between devices.
             </p>
             {showSubtleNeverExportedBackupCue ? (
-              <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/42">
-                You have several watches saved here, and no JSON export is on record in this browser yet. When it suits you,
-                export a backup so you are not relying on this device alone.
-              </p>
+              <div
+                className={classNames(
+                  "mt-3 max-w-2xl rounded-2xl border border-[hsla(34,26%,44%,0.55)] bg-black/30 px-3 py-2.5 text-[11px] leading-relaxed text-[hsla(38,28%,78%,0.82)]",
+                  gold.frame,
+                )}
+              >
+                <p className="text-[10px] font-medium uppercase tracking-widest text-[hsla(36,18%,52%,0.75)]">Backup</p>
+                <p className="mt-1">
+                  Backup recommended: export your collection to avoid losing local data. Mobile browsers may clear site
+                  storage without warning.
+                </p>
+              </div>
             ) : null}
             <p className="mt-4 text-[11px] leading-relaxed text-white/42">
               CSV export includes metadata only (no images): brand, model, reference, year, values, currency, condition, box
@@ -1763,13 +1855,29 @@ export default function Page() {
           ) : watches.length === 0 ? (
             <div className={classNames("mt-6 rounded-3xl p-8 sm:p-10", gold.frameLg)}>
               <div className="mx-auto max-w-md text-center">
-                <p className={classNames("mx-auto inline-flex rounded-full px-3 py-1 text-[11px] tracking-widest", gold.pill)}>
+                {noWatchDataFound ? (
+                  <p className="text-sm leading-relaxed text-white/62">
+                    No collection data was found in this browser. If you have a backup file, import it to restore your
+                    collection.
+                  </p>
+                ) : null}
+                <p
+                  className={classNames(
+                    "mx-auto inline-flex rounded-full px-3 py-1 text-[11px] tracking-widest",
+                    gold.pill,
+                    noWatchDataFound ? "mt-6" : "",
+                  )}
+                >
                   EMPTY VAULT
                 </p>
                 <p className="mt-5 text-lg font-semibold tracking-tight text-white/92">Your vault is ready</p>
                 <p className="mt-3 text-sm leading-relaxed text-white/58">
                   Start your private watch vault by adding your first watch. Everything stays on this device until you export
                   a backup.
+                </p>
+                <p className="mt-3 text-[11px] leading-relaxed text-white/42">
+                  WatchVault stores your collection locally on this device/browser. Mobile browsers may remove local website
+                  data. Export a backup regularly.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button
@@ -1824,7 +1932,8 @@ export default function Page() {
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
             WatchVault stores your collection locally on this device and browser — private, with no account or cloud
             database. Watches added here do not appear on other devices by themselves; export a backup and import it where
-            you want your vault to live next.
+            you want your vault to live next. On phones, browsers may discard site data to save space — keep a JSON export
+            you trust.
           </p>
           <a
             href={FEEDBACK_MAILTO}
