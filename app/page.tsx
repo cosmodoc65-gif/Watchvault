@@ -6,7 +6,7 @@ import { base64ToBlob } from "@/lib/backupEncoding";
 import { compressImageFile } from "@/lib/imageCompress";
 import { buildBackupJsonString, buildCollectionCsv } from "@/lib/backupFormats";
 import { downloadWatchVaultCollectionPdf } from "@/lib/collectionPdf";
-import { loadWatchesFromAllSources, persistWatchCollection } from "@/lib/watchCollectionStorage";
+import { inspectWatchVaultStorageReadonly, loadWatchesFromAllSources, persistWatchCollection } from "@/lib/watchCollectionStorage";
 import {
   ALL_WATCH_BOXPAPERS,
   ALL_WATCH_CONDITIONS,
@@ -649,6 +649,7 @@ export default function Page() {
   const [indexedDbUnavailable, setIndexedDbUnavailable] = useState(false);
   const [noWatchDataFound, setNoWatchDataFound] = useState(false);
   const [collectionPersistenceWarning, setCollectionPersistenceWarning] = useState<string | null>(null);
+  const loadGenerationRef = useRef(0);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -700,11 +701,11 @@ export default function Page() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let cancelled = false;
+    const myGeneration = ++loadGenerationRef.current;
     void (async () => {
       try {
         const loaded = await loadWatchesFromAllSources();
-        if (cancelled) return;
+        if (myGeneration !== loadGenerationRef.current) return;
         setCollectionPersistenceWarning(null);
         setWatches(loaded.watches);
         setWatchStorageIssue(loaded.issue);
@@ -712,7 +713,7 @@ export default function Page() {
         setIndexedDbUnavailable(loaded.indexedDbUnavailable);
         setNoWatchDataFound(loaded.noWatchDataFound);
       } catch {
-        if (cancelled) return;
+        if (myGeneration !== loadGenerationRef.current) return;
         setWatches([]);
         setWatchStorageIssue(null);
         blockEmptyWatchListPersistRef.current = true;
@@ -720,7 +721,9 @@ export default function Page() {
         setNoWatchDataFound(false);
         setCollectionPersistenceWarning(null);
       } finally {
-        if (!cancelled) setWatchesHydrated(true);
+        if (myGeneration === loadGenerationRef.current) {
+          setWatchesHydrated(true);
+        }
       }
     })();
     setIsMounted(true);
@@ -731,7 +734,18 @@ export default function Page() {
       /* ignore */
     }
     return () => {
-      cancelled = true;
+      loadGenerationRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const w = window as unknown as {
+      __watchVaultInspectStorage?: () => ReturnType<typeof inspectWatchVaultStorageReadonly>;
+    };
+    w.__watchVaultInspectStorage = () => inspectWatchVaultStorageReadonly();
+    return () => {
+      delete w.__watchVaultInspectStorage;
     };
   }, []);
 
