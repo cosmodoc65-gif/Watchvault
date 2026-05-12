@@ -51,39 +51,55 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** object-fit: contain in mm — max box respects optional inset for cream breathing room. */
+function containedSizeMm(
+  iw: number,
+  ih: number,
+  maxWmm: number,
+  maxHmm: number,
+  inset: number,
+): { wMm: number; hMm: number } {
+  const mw = maxWmm * inset;
+  const mh = maxHmm * inset;
+  const aspect = iw / ih;
+  let wMm = mw;
+  let hMm = wMm / aspect;
+  if (hMm > mh) {
+    hMm = mh;
+    wMm = hMm * aspect;
+  }
+  return { wMm, hMm };
+}
+
 /**
- * object-fit: contain — full photo visible, letterboxed on charcoal, centred, no distortion.
+ * Full image, contain scaling, no letterboxing in the raster — dimensions match draw size on the PDF.
  */
-function imageContainToJpegDataUrl(
+function imageContainedJpeg(
   img: HTMLImageElement,
-  boxWmm: number,
-  boxHmm: number,
+  maxWmm: number,
+  maxHmm: number,
   quality: number,
-): string {
-  const scalePx = 2.75;
-  const pxW = Math.max(120, Math.round(((boxWmm * 96) / 25.4) * scalePx));
-  const pxH = Math.max(120, Math.round(((boxHmm * 96) / 25.4) * scalePx));
+  inset: number,
+): { dataUrl: string; widthMm: number; heightMm: number } {
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
-  const s = Math.min(pxW / iw, pxH / ih);
-  const dw = Math.max(1, Math.round(iw * s));
-  const dh = Math.max(1, Math.round(ih * s));
-  const ox = (pxW - dw) / 2;
-  const oy = (pxH - dh) / 2;
+  const { wMm, hMm } = containedSizeMm(iw, ih, maxWmm, maxHmm, inset);
+
+  const scalePx = 2.75;
+  const pxW = Math.max(48, Math.round(((wMm * 96) / 25.4) * scalePx));
+  const pxH = Math.max(48, Math.round(((hMm * 96) / 25.4) * scalePx));
 
   const canvas = document.createElement("canvas");
   canvas.width = pxW;
   canvas.height = pxH;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Could not prepare image for PDF.");
-  ctx.fillStyle = "#262428";
-  ctx.fillRect(0, 0, pxW, pxH);
-  ctx.drawImage(img, 0, 0, iw, ih, ox, oy, dw, dh);
-  return canvas.toDataURL("image/jpeg", quality);
+  ctx.drawImage(img, 0, 0, iw, ih, 0, 0, pxW, pxH);
+  return { dataUrl: canvas.toDataURL("image/jpeg", quality), widthMm: wMm, heightMm: hMm };
 }
 
 type CardImage =
-  | { kind: "jpeg"; dataUrl: string }
+  | { kind: "jpeg"; dataUrl: string; widthMm: number; heightMm: number }
   | { kind: "placeholder"; reason: "none" | "remote" | "error" };
 
 async function resolveCardImage(src: string | undefined, boxWmm: number, boxHmm: number): Promise<CardImage> {
@@ -93,7 +109,9 @@ async function resolveCardImage(src: string | undefined, boxWmm: number, boxHmm:
   }
   try {
     const el = await loadImageElement(src);
-    return { kind: "jpeg", dataUrl: imageContainToJpegDataUrl(el, boxWmm, boxHmm, 0.82) };
+    const inset = 0.9;
+    const { dataUrl, widthMm, heightMm } = imageContainedJpeg(el, boxWmm, boxHmm, 0.82, inset);
+    return { kind: "jpeg", dataUrl, widthMm, heightMm };
   } catch {
     return { kind: "placeholder", reason: "error" };
   }
@@ -245,15 +263,23 @@ export async function downloadWatchVaultCollectionPdf(options: CollectionPdfOpti
     const yPhoto = innerTop + 1.4;
     const photoInnerW = innerCardW - 2.8;
 
-    doc.setFillColor(palette.charcoal.r, palette.charcoal.g, palette.charcoal.b);
+    /* Photo strip: cream field (no full-width charcoal band); image sits on a small centred charcoal pad */
+    doc.setFillColor(palette.cardCream.r, palette.cardCream.g, palette.cardCream.b);
     doc.rect(x0, yPhoto, photoInnerW, imgH, "F");
-    doc.setDrawColor(palette.gold.r, palette.gold.g, palette.gold.b);
-    doc.setLineWidth(0.15);
+    doc.setDrawColor(palette.goldSoft.r, palette.goldSoft.g, palette.goldSoft.b);
+    doc.setLineWidth(0.12);
     doc.rect(x0, yPhoto, photoInnerW, imgH, "S");
 
     if (img.kind === "jpeg") {
       try {
-        doc.addImage(img.dataUrl, "JPEG", x0, yPhoto, photoInnerW, imgH);
+        const ix = x0 + (photoInnerW - img.widthMm) / 2;
+        const iy = yPhoto + (imgH - img.heightMm) / 2;
+        doc.setFillColor(palette.charcoal.r, palette.charcoal.g, palette.charcoal.b);
+        doc.rect(ix, iy, img.widthMm, img.heightMm, "F");
+        doc.setDrawColor(palette.gold.r, palette.gold.g, palette.gold.b);
+        doc.setLineWidth(0.12);
+        doc.rect(ix, iy, img.widthMm, img.heightMm, "S");
+        doc.addImage(img.dataUrl, "JPEG", ix, iy, img.widthMm, img.heightMm);
       } catch {
         doc.setFontSize(7.5);
         doc.setTextColor(palette.coverMuted.r, palette.coverMuted.g, palette.coverMuted.b);
