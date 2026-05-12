@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { base64ToBlob } from "@/lib/backupEncoding";
 import { compressImageFile } from "@/lib/imageCompress";
 import { buildBackupJsonString, buildCollectionCsv } from "@/lib/backupFormats";
+import { downloadWatchVaultCollectionPdf } from "@/lib/collectionPdf";
 import {
   ALL_WATCH_BOXPAPERS,
   ALL_WATCH_CONDITIONS,
@@ -1085,6 +1086,25 @@ export default function Page() {
     triggerTextDownload(`watchvault-export-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
   }, [watches, collectionCurrency]);
 
+  const onExportCollectionPdf = useCallback(async () => {
+    if (watches.length === 0) {
+      setToastMessage("Add at least one watch before exporting a PDF report.");
+      return;
+    }
+    try {
+      await downloadWatchVaultCollectionPdf({
+        watches,
+        collectionCurrency,
+        getPhotoSrc: (w) => resolvedPhotoUrls[w.id] ?? w.photoUrl,
+      });
+      setToastMessage("Collection PDF generated.");
+    } catch (e) {
+      setToastMessage(
+        e instanceof Error ? e.message : "PDF export failed. Try again, or export a JSON backup instead.",
+      );
+    }
+  }, [watches, collectionCurrency, resolvedPhotoUrls]);
+
   const backupIsDue = useMemo(() => {
     if (!isMounted) return false;
     if (backupReminderDays === 0) return false;
@@ -1401,10 +1421,18 @@ export default function Page() {
               <button type="button" onClick={onExportCsv} className={classNames("min-h-[44px]", gold.btnSmSecondary)}>
                 Export CSV
               </button>
+              <button
+                type="button"
+                onClick={() => void onExportCollectionPdf()}
+                className={classNames("min-h-[44px]", gold.btnSmSecondary)}
+              >
+                Export collection PDF
+              </button>
             </div>
             <p className="mt-4 text-[11px] leading-relaxed text-white/42">
               CSV export includes metadata only (no images): brand, model, reference, year, values, currency, condition, box
-              / papers, notes, and service history.
+              / papers, notes, and service history. The PDF is a printable personal collection report with photos (generated
+              entirely in your browser).
             </p>
           </div>
         </section>
@@ -1627,13 +1655,22 @@ export default function Page() {
               <h2 className="text-xl font-semibold tracking-tight text-white/92">Collection</h2>
               <p className="mt-1 text-sm text-white/60">Your watches, at a glance.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
-              className={classNames("min-h-[44px] rounded-2xl px-4 py-2", gold.btnSmSecondary)}
-            >
-              Add another
-            </button>
+            <div className="flex flex-wrap items-end justify-end gap-2 sm:items-center">
+              <button
+                type="button"
+                onClick={() => void onExportCollectionPdf()}
+                className={classNames("min-h-[44px] rounded-2xl px-4 py-2", gold.btnSmSecondary)}
+              >
+                Export PDF report
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
+                className={classNames("min-h-[44px] rounded-2xl px-4 py-2", gold.btnSmSecondary)}
+              >
+                Add another
+              </button>
+            </div>
           </div>
 
           {!isMounted ? (
