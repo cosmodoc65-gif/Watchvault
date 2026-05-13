@@ -1332,36 +1332,43 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b-2 border-[hsla(42,26%,38%,0.88)] bg-black/50 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-3 px-4 py-3.5 sm:gap-x-4 sm:py-4 md:py-5">
-          <div className="flex min-w-0 min-[360px]:flex-1 items-center gap-2.5 sm:gap-3.5 md:gap-4">
-            <div
-              className={classNames(
-                "relative flex h-[3.5rem] w-[3.5rem] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-black/50 to-black/30 sm:h-16 sm:w-16 md:h-[4.25rem] md:w-[4.25rem]",
-                gold.frame,
-              )}
-            >
-              <VaultMark className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" />
-            </div>
-            <div className="min-w-0">
-              <p
+      <header className="sticky top-0 z-40 border-b-2 border-[hsla(42,28%,52%,0.95)] bg-black/50 backdrop-blur-md">
+        <div
+          className={classNames(
+            "mx-auto max-w-6xl px-4 py-3.5 sm:py-4 md:py-5",
+            "flex min-w-0 flex-col gap-y-3.5 sm:gap-y-4",
+            "md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-4 md:gap-y-3",
+          )}
+        >
+          <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-3 md:w-auto md:flex-1 md:flex-nowrap md:gap-x-3.5 lg:gap-4">
+            <div className="flex min-w-0 min-[360px]:flex-1 items-center gap-2.5 sm:gap-3.5 md:min-w-0 md:max-w-none">
+              <div
                 className={classNames(
-                  vaultSerif.className,
-                  "bg-gradient-to-b from-[hsla(46,40%,99%,0.99)] via-[hsla(44,32%,90%,0.98)] to-[hsla(42,30%,68%,0.97)] bg-clip-text text-[1.35rem] font-bold leading-[1.05] tracking-[0.03em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[380px]:text-[1.55rem] min-[400px]:text-[1.75rem] sm:text-[2.1rem] sm:tracking-[0.05em] md:text-[2.42rem] md:tracking-[0.055em]",
+                  "relative flex h-[3.5rem] w-[3.5rem] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-black/50 to-black/30 sm:h-16 sm:w-16 md:h-[4.25rem] md:w-[4.25rem]",
+                  gold.frame,
                 )}
               >
-                Wristfolio
-              </p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,28%,76%,0.88)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em]">
-                Private. Local. Yours.
-              </p>
+                <VaultMark className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" />
+              </div>
+              <div className="min-w-0">
+                <p
+                  className={classNames(
+                    vaultSerif.className,
+                    "bg-gradient-to-b from-[hsla(46,40%,99%,0.99)] via-[hsla(44,32%,90%,0.98)] to-[hsla(42,30%,68%,0.97)] bg-clip-text text-[1.35rem] font-bold leading-[1.05] tracking-[0.03em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[380px]:text-[1.55rem] min-[400px]:text-[1.75rem] sm:text-[2.1rem] sm:tracking-[0.05em] md:text-[2.42rem] md:tracking-[0.055em]",
+                  )}
+                >
+                  Wristfolio
+                </p>
+                <p className="mt-1 hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,28%,76%,0.88)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em] md:block">
+                  Private. Local. Yours.
+                </p>
+              </div>
             </div>
-          </div>
 
-          <nav
-            className="flex max-w-[100vw] shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2"
-            aria-label="Main views"
-          >
+            <nav
+              className="flex min-w-0 max-w-full shrink-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-2 sm:gap-x-2"
+              aria-label="Main views"
+            >
             <button
               type="button"
               onClick={() => goMainView("dashboard")}
@@ -1399,6 +1406,16 @@ export default function Page() {
               Feedback
             </a>
           </nav>
+          </div>
+          <p
+            className={classNames(
+              "w-full min-w-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,30%,78%,0.9)] sm:text-xs sm:tracking-[0.2em]",
+              "pl-[calc(3.5rem+0.625rem)] sm:pl-[calc(4rem+0.875rem)] md:pl-0",
+              "md:hidden",
+            )}
+          >
+            Private. Local. Yours.
+          </p>
         </div>
       </header>
 
