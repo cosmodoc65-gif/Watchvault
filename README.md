@@ -1,6 +1,6 @@
-# WatchVault
+# Wristfolio
 
-Dark luxury watch collection vault — local-only state (no auth, no database).
+Dark luxury watch collection app — local-only state (no auth, no cloud database).
 
 ## Run
 
@@ -16,4 +16,3 @@ npm run dev
 - Header “Add Watch” scrolls to the add-watch form.
 - Uploading a photo creates an immediate preview URL via `URL.createObjectURL(file)` and stores it in the watch object.
 - Cards render the uploaded photo with a normal `img` tag; if no photo exists, a placeholder is shown.
-

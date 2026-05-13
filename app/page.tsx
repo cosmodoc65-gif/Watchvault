@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { base64ToBlob } from "@/lib/backupEncoding";
 import { compressImageFile } from "@/lib/imageCompress";
 import { buildBackupJsonString, buildCollectionCsv } from "@/lib/backupFormats";
-import { downloadWatchVaultCollectionPdf } from "@/lib/collectionPdf";
-import { inspectWatchVaultStorageReadonly, loadWatchesFromAllSources, persistWatchCollection } from "@/lib/watchCollectionStorage";
+import { downloadWristfolioCollectionPdf } from "@/lib/collectionPdf";
+import { inspectWristfolioStorageReadonly, loadWatchesFromAllSources, persistWatchCollection } from "@/lib/watchCollectionStorage";
 import {
   ALL_WATCH_BOXPAPERS,
   ALL_WATCH_CONDITIONS,
@@ -22,11 +22,11 @@ import {
   watchStorageIssueUserMessage,
 } from "@/lib/watchNormalize";
 import {
-  WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY,
-  WATCHVAULT_BACKUP_REMINDER_DAYS_KEY,
-  WATCHVAULT_COLLECTION_CURRENCY_KEY,
+  WRISTFOLIO_BACKUP_LAST_EXPORTED_AT_KEY,
+  WRISTFOLIO_BACKUP_REMINDER_DAYS_KEY,
+  WRISTFOLIO_COLLECTION_CURRENCY_KEY,
 } from "@/lib/watchStorageKeys";
-import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/watchVaultIdb";
+import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/wristfolioIdb";
 
 const FEEDBACK_MAILTO =
   "mailto:DrASchuter@proton.me?subject=" +
@@ -729,7 +729,7 @@ export default function Page() {
     })();
     setIsMounted(true);
     try {
-      const raw = window.localStorage.getItem(WATCHVAULT_COLLECTION_CURRENCY_KEY);
+      const raw = window.localStorage.getItem(WRISTFOLIO_COLLECTION_CURRENCY_KEY);
       if (raw && isCollectionCurrency(raw)) setCollectionCurrency(raw);
     } catch {
       /* ignore */
@@ -742,21 +742,21 @@ export default function Page() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
     const w = window as unknown as {
-      __watchVaultInspectStorage?: () => ReturnType<typeof inspectWatchVaultStorageReadonly>;
+      __wristfolioInspectStorage?: () => ReturnType<typeof inspectWristfolioStorageReadonly>;
     };
-    w.__watchVaultInspectStorage = () => inspectWatchVaultStorageReadonly();
+    w.__wristfolioInspectStorage = () => inspectWristfolioStorageReadonly();
     return () => {
-      delete w.__watchVaultInspectStorage;
+      delete w.__wristfolioInspectStorage;
     };
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const rawDays = window.localStorage.getItem(WATCHVAULT_BACKUP_REMINDER_DAYS_KEY);
+      const rawDays = window.localStorage.getItem(WRISTFOLIO_BACKUP_REMINDER_DAYS_KEY);
       const days = rawDays ? Number(rawDays) : 0;
       setBackupReminderDays(days === 7 || days === 30 ? days : 0);
-      const rawLast = window.localStorage.getItem(WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY);
+      const rawLast = window.localStorage.getItem(WRISTFOLIO_BACKUP_LAST_EXPORTED_AT_KEY);
       const last = rawLast ? Number(rawLast) : NaN;
       setLastBackupExportedAt(Number.isFinite(last) && last > 0 ? last : null);
     } catch {
@@ -823,7 +823,7 @@ export default function Page() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(WATCHVAULT_COLLECTION_CURRENCY_KEY, collectionCurrency);
+      window.localStorage.setItem(WRISTFOLIO_COLLECTION_CURRENCY_KEY, collectionCurrency);
     } catch {
       /* ignore */
     }
@@ -1160,7 +1160,7 @@ export default function Page() {
       const now = Date.now();
       setLastBackupExportedAt(now);
       try {
-        window.localStorage.setItem(WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY, String(now));
+        window.localStorage.setItem(WRISTFOLIO_BACKUP_LAST_EXPORTED_AT_KEY, String(now));
       } catch {
         /* ignore */
       }
@@ -1180,7 +1180,7 @@ export default function Page() {
       return;
     }
     try {
-      await downloadWatchVaultCollectionPdf({
+      await downloadWristfolioCollectionPdf({
         watches,
         collectionCurrency,
         getPhotoSrc: (w) => resolvedPhotoUrls[w.id] ?? w.photoUrl,
@@ -1219,7 +1219,7 @@ export default function Page() {
     (days: 0 | 7 | 30) => {
       setBackupReminderDays(days);
       try {
-        window.localStorage.setItem(WATCHVAULT_BACKUP_REMINDER_DAYS_KEY, String(days));
+        window.localStorage.setItem(WRISTFOLIO_BACKUP_REMINDER_DAYS_KEY, String(days));
       } catch {
         /* ignore */
       }

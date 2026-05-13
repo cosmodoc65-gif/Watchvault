@@ -166,9 +166,9 @@ function readNonEmptyLocalStorageValue(key: string): string | null {
   return s && s.trim() ? s : null;
 }
 
-function logWatchVaultStorageDev(info: Record<string, unknown>) {
+function logWristfolioStorageDev(info: Record<string, unknown>) {
   if (process.env.NODE_ENV === "development") {
-    console.info("[WatchVault storage]", info);
+    console.info("[Wristfolio storage]", info);
   }
 }
 
@@ -227,7 +227,7 @@ export function readWatchCollectionFromLocalStorage(): LoadWatchesFromLocalStora
     }
     const watches = normalizeWatchList(parsed);
     if (watches.length > 0) {
-      logWatchVaultStorageDev({
+      logWristfolioStorageDev({
         storageKeyUsed: key,
         watchesLoaded: watches.length,
         migrationPerformed: false,
@@ -256,7 +256,7 @@ export function readWatchCollectionFromLocalStorage(): LoadWatchesFromLocalStora
   }
 
   if (primaryJsonInvalid) {
-    logWatchVaultStorageDev({
+    logWristfolioStorageDev({
       storageKeyUsed: null,
       watchesLoaded: 0,
       migrationPerformed: false,
@@ -275,7 +275,7 @@ export function readWatchCollectionFromLocalStorage(): LoadWatchesFromLocalStora
   if (primaryStr) {
     const fromPrimary = normalizeWatchList(primaryParsed);
     if (Array.isArray(primaryParsed) && primaryParsed.length > 0 && fromPrimary.length === 0) {
-      logWatchVaultStorageDev({
+      logWristfolioStorageDev({
         storageKeyUsed: WATCHES_STORAGE_KEY,
         watchesLoaded: 0,
         migrationPerformed: false,
@@ -295,7 +295,7 @@ export function readWatchCollectionFromLocalStorage(): LoadWatchesFromLocalStora
         },
       };
     }
-    logWatchVaultStorageDev({
+    logWristfolioStorageDev({
       storageKeyUsed: WATCHES_STORAGE_KEY,
       watchesLoaded: fromPrimary.length,
       migrationPerformed: false,
@@ -310,7 +310,7 @@ export function readWatchCollectionFromLocalStorage(): LoadWatchesFromLocalStora
     };
   }
 
-  logWatchVaultStorageDev({
+  logWristfolioStorageDev({
     storageKeyUsed: null,
     watchesLoaded: 0,
     migrationPerformed: false,
@@ -334,6 +334,7 @@ export function loadWatchesFromLocalStorage(): LoadWatchesFromLocalStorageResult
   return r;
 }
 
+/** On-disk JSON shape; `watchvaultBackup` must stay for imports of older exports. */
 export type BackupPayload = {
   watchvaultBackup: true;
   version: 1;
@@ -344,6 +345,7 @@ export type BackupPayload = {
 
 /** Parsed backup plus embedded JPEG/base64 payloads keyed by watch id (from file). */
 export type ParsedBackup = {
+  /** Legacy marker field; required in file format. */
   watchvaultBackup: true;
   version: 1;
   exportedAt: string;

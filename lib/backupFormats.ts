@@ -1,6 +1,6 @@
 import { blobToBase64 } from "./backupEncoding";
 import { BOXPAPERS_LABELS, CONDITION_LABELS, type CollectionCurrency, type Watch } from "./watchNormalize";
-import { getWatchImageBlob } from "./watchVaultIdb";
+import { getWatchImageBlob } from "./wristfolioIdb";
 
 export async function buildBackupJsonString(
   watches: Watch[],
@@ -42,6 +42,7 @@ export async function buildBackupJsonString(
 
   return JSON.stringify(
     {
+      // Legacy schema flag (original app codename); keep so existing backups and imports keep working.
       watchvaultBackup: true,
       version: 1,
       exportedAt,

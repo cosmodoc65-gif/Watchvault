@@ -173,7 +173,7 @@ export type CollectionPdfOptions = {
  * Builds a printable personal collection report (browser-only).
  * Wording is intentionally conservative — not an appraisal or insurance certificate.
  */
-export async function downloadWatchVaultCollectionPdf(options: CollectionPdfOptions): Promise<void> {
+export async function downloadWristfolioCollectionPdf(options: CollectionPdfOptions): Promise<void> {
   const { watches, collectionCurrency, getPhotoSrc } = options;
   if (watches.length === 0) {
     throw new Error("Add at least one watch before exporting a PDF report.");

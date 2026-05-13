@@ -6,16 +6,16 @@ import {
 } from "@/lib/watchNormalize";
 import {
   WATCHES_STORAGE_KEY,
-  WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY,
-  WATCHVAULT_BACKUP_REMINDER_DAYS_KEY,
-  WATCHVAULT_COLLECTION_CURRENCY_KEY,
+  WRISTFOLIO_BACKUP_LAST_EXPORTED_AT_KEY,
+  WRISTFOLIO_BACKUP_REMINDER_DAYS_KEY,
+  WRISTFOLIO_COLLECTION_CURRENCY_KEY,
 } from "@/lib/watchStorageKeys";
 import {
   loadWatchCollectionJson,
-  probeWatchVaultIndexedDb,
+  probeWristfolioIndexedDb,
   saveWatchCollectionJson,
   WATCH_COLLECTION_IDB_KEY,
-} from "@/lib/watchVaultIdb";
+} from "@/lib/wristfolioIdb";
 
 export type LoadWatchesFromStorageResult = LoadWatchesFromLocalStorageResult & {
   loadedFrom: "indexeddb" | "localStorage" | null;
@@ -46,9 +46,9 @@ const emptyExtended = (): LoadWatchesFromStorageResult => ({
 
 const SETTINGS_LOCALSTORAGE_KEYS_LOWER = new Set(
   [
-    WATCHVAULT_COLLECTION_CURRENCY_KEY,
-    WATCHVAULT_BACKUP_REMINDER_DAYS_KEY,
-    WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY,
+    WRISTFOLIO_COLLECTION_CURRENCY_KEY,
+    WRISTFOLIO_BACKUP_REMINDER_DAYS_KEY,
+    WRISTFOLIO_BACKUP_LAST_EXPORTED_AT_KEY,
   ].map((k) => k.toLowerCase()),
 );
 
@@ -78,6 +78,7 @@ function isExcludedSettingsLocalStorageKey(key: string): boolean {
 
 /**
  * Heuristic: any localStorage key that might hold a JSON watch array (not only known keys).
+ * Matches `watchvault` in the key name on purpose — those are legacy Wristfolio storage keys; do not remove.
  */
 export function isLikelyWatchListLocalStorageKey(key: string): boolean {
   const l = key.toLowerCase();
@@ -241,7 +242,7 @@ function devLocationLabel(): string {
  * Development-only: scan IndexedDB + all candidate localStorage keys and merge (read-only).
  * Does not write storage.
  */
-export async function inspectWatchVaultStorageReadonly(): Promise<{
+export async function inspectWristfolioStorageReadonly(): Promise<{
   host: string;
   indexedDbOpenOk: boolean;
   indexedDbProbeError?: string;
@@ -251,7 +252,7 @@ export async function inspectWatchVaultStorageReadonly(): Promise<{
   merged: Watch[];
 }> {
   const host = devLocationLabel();
-  const probe = await probeWatchVaultIndexedDb();
+  const probe = await probeWristfolioIndexedDb();
   const idbWatches = probe.ok ? await parseIdbWatchList() : [];
   const wide = recoverWatchListsFromLocalStorageReadonly();
   const merged = mergeWatchListsDedupeByIdPreferFirst([idbWatches, ...wide.map((w) => w.watches)]);
@@ -275,7 +276,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
     return emptyExtended();
   }
 
-  const idbProbe = await probeWatchVaultIndexedDb();
+  const idbProbe = await probeWristfolioIndexedDb();
   const indexedDbUnavailable = !idbProbe.ok;
 
   const idbWatches = indexedDbUnavailable ? [] : await parseIdbWatchList();
@@ -290,7 +291,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
     combined.length > 0 && (lsRead.issue !== null || lsRead.blockEmptyPersist) && lsRead.watches.length === 0;
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[WatchVault storage audit]", {
+    console.info("[Wristfolio storage audit]", {
       host: devLocationLabel(),
       localStorageKeysRelevant: auditLocalStorageRelevantKeys(),
       indexedDbOpenOk: idbProbe.ok,
@@ -327,7 +328,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
       likelyUnreadableWatchPayloadElsewhere: unreadableWatchLikeLocalStorage,
     });
     if (process.env.NODE_ENV === "development") {
-      console.info("[WatchVault storage]", {
+      console.info("[Wristfolio storage]", {
         host: devLocationLabel(),
         storageKeyUsed: null,
         watchesLoaded: 0,
@@ -374,7 +375,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
   // load migrations (e.g. Strict Mode, slow IndexedDB on mobile, or Vercel cold-start + client navigation).
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[WatchVault storage]", {
+    console.info("[Wristfolio storage]", {
       host: devLocationLabel(),
       storageKeyUsed: sourceKey,
       watchesLoaded: watches.length,
@@ -430,7 +431,7 @@ export async function persistWatchCollection(
   let localStorageMirrorOk = false;
   let errorMessage: string | undefined;
 
-  const probe = await probeWatchVaultIndexedDb();
+  const probe = await probeWristfolioIndexedDb();
   if (probe.ok) {
     indexedDbTried = true;
     try {
@@ -459,7 +460,7 @@ export async function persistWatchCollection(
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[WatchVault storage persist]", {
+    console.info("[Wristfolio storage persist]", {
       host: devLocationLabel(),
       primaryWritten,
       indexedDbTried,
