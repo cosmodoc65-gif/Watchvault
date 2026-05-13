@@ -186,6 +186,8 @@ const gold = {
     "rounded-full border-2 border-[hsla(42,26%,52%,0.9)] bg-black/40 px-3 py-1.5 text-[12px] font-semibold tracking-widest text-white/86 shadow-[inset_0_1px_0_0_hsla(44,18%,60%,0.15)]",
 };
 
+const ADD_WATCH_STEP_COUNT = 4;
+
 /** Horology-inspired mark: case + dial ring + twelve index + single hand — minimal, not illustrative. */
 function VaultMark({ className }: { className?: string }) {
   const gid = `wfMarkGold-${useId().replace(/:/g, "")}`;
@@ -559,6 +561,18 @@ function WatchDetailPanel({
                 <dd className="text-right font-medium text-white/92">{watch.serialNumber}</dd>
               </div>
             ) : null}
+            {watch.caseSize ? (
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Case size</dt>
+                <dd className="text-right font-medium text-white/92">{watch.caseSize}</dd>
+              </div>
+            ) : null}
+            {watch.movement ? (
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Movement</dt>
+                <dd className="text-right font-medium text-white/92">{watch.movement}</dd>
+              </div>
+            ) : null}
             {typeof watch.purchasePrice === "number" ? (
               <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
                 <dt className="font-medium text-white/62">Purchase price</dt>
@@ -573,6 +587,18 @@ function WatchDetailPanel({
                 <dd className="text-right font-medium text-white/92">
                   {formatCollectionCurrency(watch.estimatedValue, currency)}
                 </dd>
+              </div>
+            ) : null}
+            {watch.purchaseDate ? (
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Purchase date</dt>
+                <dd className="text-right font-medium text-white/92">{watch.purchaseDate}</dd>
+              </div>
+            ) : null}
+            {watch.seller ? (
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Seller / source</dt>
+                <dd className="text-right font-medium text-white/92">{watch.seller}</dd>
               </div>
             ) : null}
             {watch.condition ? (
@@ -660,6 +686,11 @@ export default function Page() {
   const [serviceHistory, setServiceHistory] = useState("");
   const [notes, setNotes] = useState("");
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(undefined);
+  const [caseSizeStr, setCaseSizeStr] = useState("");
+  const [movementStr, setMovementStr] = useState("");
+  const [purchaseDateStr, setPurchaseDateStr] = useState("");
+  const [sellerStr, setSellerStr] = useState("");
+  const [addWatchStep, setAddWatchStep] = useState(1);
 
   const collectionLabel = useMemo(() => {
     if (watches.length === 0) return "No watches yet";
@@ -903,6 +934,11 @@ export default function Page() {
     setBoxPapers("");
     setServiceHistory("");
     setNotes("");
+    setCaseSizeStr("");
+    setMovementStr("");
+    setPurchaseDateStr("");
+    setSellerStr("");
+    setAddWatchStep(1);
     setPhotoRemoveRequested(false);
     pendingPhotoBlobRef.current = null;
     setPhotoPreviewUrl((prev) => {
@@ -915,9 +951,14 @@ export default function Page() {
   const onAddWatch = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (addWatchStep !== ADD_WATCH_STEP_COUNT) return;
       const trimmedBrand = brand.trim();
       const trimmedModel = model.trim();
-      if (!trimmedBrand || !trimmedModel) return;
+      if (!trimmedBrand || !trimmedModel) {
+        setToastMessage("Brand and model are required.");
+        setAddWatchStep(2);
+        return;
+      }
 
       const parsedEst = Number(estimatedValue.replace(/[^\d]/g, ""));
       const normalizedEstimatedValue = Number.isFinite(parsedEst) && parsedEst > 0 ? parsedEst : undefined;
@@ -930,8 +971,12 @@ export default function Page() {
         reference: reference.trim() || undefined,
         year: year.trim() || undefined,
         serialNumber: serialNumber.trim() || undefined,
+        caseSize: caseSizeStr.trim() || undefined,
+        movement: movementStr.trim() || undefined,
         purchasePrice,
         estimatedValue: normalizedEstimatedValue,
+        purchaseDate: purchaseDateStr.trim() || undefined,
+        seller: sellerStr.trim() || undefined,
         condition: condition || undefined,
         boxPapers: boxPapers || undefined,
         serviceHistory: serviceHistory.trim() || undefined,
@@ -1035,11 +1080,16 @@ export default function Page() {
       boxPapers,
       serviceHistory,
       notes,
+      caseSizeStr,
+      movementStr,
+      purchaseDateStr,
+      sellerStr,
       photoPreviewUrl,
       photoRemoveRequested,
       editingWatchId,
       watches,
       resetForm,
+      addWatchStep,
     ],
   );
 
@@ -1056,6 +1106,7 @@ export default function Page() {
       setPhotoRemoveRequested(false);
       pendingPhotoBlobRef.current = null;
       setEditingWatchId(watch.id);
+      setAddWatchStep(1);
       setBrand(watch.brand ?? "");
       setModel(watch.model ?? "");
       setReference(watch.reference ?? "");
@@ -1067,6 +1118,10 @@ export default function Page() {
       setBoxPapers(watch.boxPapers ?? "");
       setServiceHistory(watch.serviceHistory ?? "");
       setNotes(watch.notes ?? "");
+      setCaseSizeStr(watch.caseSize ?? "");
+      setMovementStr(watch.movement ?? "");
+      setPurchaseDateStr(watch.purchaseDate ?? "");
+      setSellerStr(watch.seller ?? "");
 
       setPhotoPreviewUrl((prev) => {
         if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -1094,6 +1149,19 @@ export default function Page() {
   const onCancelEdit = useCallback(() => {
     resetForm();
   }, [resetForm]);
+
+  const goAddWatchNext = useCallback(() => {
+    if (addWatchStep >= ADD_WATCH_STEP_COUNT) return;
+    if (addWatchStep === 2 && (!brand.trim() || !model.trim())) {
+      setToastMessage("Brand and model are required to continue.");
+      return;
+    }
+    setAddWatchStep((s) => Math.min(ADD_WATCH_STEP_COUNT, s + 1));
+  }, [addWatchStep, brand, model]);
+
+  const goAddWatchBack = useCallback(() => {
+    setAddWatchStep((s) => Math.max(1, s - 1));
+  }, []);
 
   const persistImportedPhotos = useCallback(
     async (list: Watch[], photos: { watchId: string; base64: string }[]) => {
@@ -1584,9 +1652,9 @@ export default function Page() {
               </div>
             ) : null}
             <p className="mt-4 text-[11px] leading-relaxed text-white/42">
-              CSV export includes metadata only (no images): brand, model, reference, year, values, currency, condition, box
-              / papers, notes, and service history. The PDF is a printable personal collection report with photos (generated
-              entirely in your browser).
+              CSV export includes metadata only (no images): brand, model, reference, year, serial, case size, movement,
+              values, currency, purchase date, seller, condition, box / papers, notes, and service history. The PDF is a
+              printable personal collection report with photos (generated entirely in your browser).
             </p>
           </div>
         </section>
@@ -1595,209 +1663,388 @@ export default function Page() {
           id="add-watch"
           className={classNames("scroll-mt-24 rounded-3xl p-5 backdrop-blur sm:p-7", gold.frameLg)}
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-white/92">Add a watch</h2>
-              <p className="mt-1 text-sm text-white/60">Photos are compressed and stored in this browser (IndexedDB).</p>
+              <h2 className="text-xl font-semibold tracking-tight text-white/92">
+                {editingWatchId ? "Edit watch" : "Add a watch"}
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/62">
+                A short guided flow — photos first, then details, ownership, and notes. Nothing leaves this browser until
+                you export.
+              </p>
             </div>
-            <div className="text-xs leading-relaxed tracking-wide text-white/45 sm:text-right">
-              <p>Local-only · No sign-in</p>
+            <div className="shrink-0 text-right text-xs leading-relaxed tracking-wide text-white/48">
+              <p>Step {addWatchStep} of {ADD_WATCH_STEP_COUNT}</p>
+              <p className="mt-1">Local-only · No sign-in</p>
             </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Add watch steps">
+            {(["Photos", "Core details", "Ownership & value", "Notes & review"] as const).map((label, i) => {
+              const n = i + 1;
+              const active = addWatchStep === n;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setAddWatchStep(n)}
+                  className={classNames(
+                    "min-h-[40px] rounded-full border-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition sm:px-4",
+                    active
+                      ? "border-[hsla(44,32%,58%,0.95)] bg-white/[0.08] text-[hsla(46,36%,94%,0.98)]"
+                      : "border-[hsla(42,22%,38%,0.55)] bg-black/25 text-white/55 hover:border-[hsla(44,26%,48%,0.75)] hover:text-white/75",
+                  )}
+                >
+                  {n}. {label}
+                </button>
+              );
+            })}
           </div>
 
           <form
             onSubmit={(e) => {
-              void onAddWatch(e);
+              e.preventDefault();
+              if (addWatchStep === ADD_WATCH_STEP_COUNT) void onAddWatch(e);
             }}
-            className="mt-6 grid gap-6 lg:grid-cols-3"
+            className="mt-8 space-y-8"
           >
-            <div className="lg:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Brand *</span>
-                <input
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="Rolex"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Model *</span>
-                <input
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="Submariner"
-                  required
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Reference</span>
-                <input
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="126610LN"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Year</span>
-                <input
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="2024"
-                  inputMode="numeric"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Serial number</span>
-                <input
-                  value={serialNumber}
-                  onChange={(e) => setSerialNumber(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="Optional"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">
-                  Purchase price ({CURRENCIES.find((c) => c.code === collectionCurrency)?.label ?? collectionCurrency})
-                </span>
-                <input
-                  value={purchasePriceStr}
-                  onChange={(e) => setPurchasePriceStr(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="12000"
-                  inputMode="numeric"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">{estimatedFieldLabel}</span>
-                <input
-                  value={estimatedValue}
-                  onChange={(e) => setEstimatedValue(e.target.value)}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px]")}
-                  placeholder="8500"
-                  inputMode="numeric"
-                />
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Condition</span>
-                <select
-                  value={condition}
-                  onChange={(e) => setCondition((e.target.value || "") as WatchCondition | "")}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px] cursor-pointer")}
-                >
-                  <option value="">—</option>
-                  {ALL_WATCH_CONDITIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {CONDITION_LABELS[c]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Box &amp; papers</span>
-                <select
-                  value={boxPapers}
-                  onChange={(e) => setBoxPapers((e.target.value || "") as WatchBoxPapers | "")}
-                  className={classNames(gold.input, gold.focus, "min-h-[48px] cursor-pointer")}
-                >
-                  <option value="">—</option>
-                  {ALL_WATCH_BOXPAPERS.map((b) => (
-                    <option key={b} value={b}>
-                      {BOXPAPERS_LABELS[b]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="sm:col-span-2 grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Service history</span>
-                <textarea
-                  value={serviceHistory}
-                  onChange={(e) => setServiceHistory(e.target.value)}
-                  className={classNames("min-h-[100px] resize-y", gold.input, gold.focus)}
-                  placeholder="Last service, work done, dates…"
-                />
-              </label>
-
-              <label className="sm:col-span-2 grid gap-2">
-                <span className="text-xs tracking-wide text-white/55">Notes</span>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className={classNames("min-h-[92px] resize-y", gold.input, gold.focus)}
-                  placeholder="Dial, bracelet, story…"
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-4">
-              <div className={classNames("overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
-                <div className="aspect-[4/3] p-3">
-                  {photoPreviewUrl ? (
-                    <img
-                      src={photoPreviewUrl}
-                      alt="Photo preview"
-                      draggable={false}
-                      className="h-full w-full rounded-xl object-cover"
-                    />
-                  ) : (
-                    <Placeholder />
-                  )}
-                </div>
-                <div className="border-t-2 border-[hsla(42,24%,40%,0.75)] p-3">
-                  <label className="grid gap-2">
-                    <span className="text-xs tracking-wide text-white/55">Photo</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => void onPickPhoto(e.target.files?.[0] ?? null)}
-                      className="block w-full min-h-[44px] text-[13px] font-medium text-white/80 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(42,26%,48%,0.9)] file:bg-black/45 file:px-3 file:py-2.5 file:text-[13px] file:font-medium file:text-white/90 hover:file:border-[hsla(44,30%,58%,0.96)] hover:file:bg-black/55"
-                    />
-                  </label>
-                  {(photoPreviewUrl || editingWatchId) && (
-                    <button
-                      type="button"
-                      className={classNames("mt-3 w-full min-h-[44px]", gold.btnSmSecondary)}
-                      onClick={() => {
-                        setPhotoRemoveRequested(true);
-                        pendingPhotoBlobRef.current = null;
-                        setPhotoPreviewUrl((prev) => {
-                          if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-                          return undefined;
-                        });
-                      }}
-                    >
-                      Remove photo
-                    </button>
-                  )}
-                  <p className="mt-2 text-[11px] leading-relaxed text-white/45">
-                    Images are resized (max ~1600px) and saved as JPEG in this browser. Older entries with inline photos
-                    still work.
+            {addWatchStep === 1 ? (
+              <div className="mx-auto max-w-xl space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-tight text-white/90">Photos</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-white/55">
+                    Add a clear photo of the watch. You can change it anytime when editing.
                   </p>
                 </div>
+                <div className={classNames("overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
+                  <div className="aspect-[4/3] p-4">
+                    {photoPreviewUrl ? (
+                      <img
+                        src={photoPreviewUrl}
+                        alt="Photo preview"
+                        draggable={false}
+                        className="h-full w-full rounded-xl object-cover"
+                      />
+                    ) : (
+                      <Placeholder />
+                    )}
+                  </div>
+                  <div className="border-t-2 border-[hsla(42,24%,40%,0.75)] p-4 sm:p-5">
+                    <label className="grid gap-2.5">
+                      <span className="text-[13px] font-medium tracking-wide text-white/65">Upload image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => void onPickPhoto(e.target.files?.[0] ?? null)}
+                        className="block w-full min-h-[48px] text-[13px] font-medium text-white/80 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(42,26%,48%,0.9)] file:bg-black/45 file:px-3 file:py-2.5 file:text-[13px] file:font-medium file:text-white/90 hover:file:border-[hsla(44,30%,58%,0.96)] hover:file:bg-black/55"
+                      />
+                    </label>
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        disabled
+                        aria-disabled="true"
+                        className="w-full cursor-not-allowed rounded-xl border-2 border-dashed border-[hsla(42,22%,38%,0.65)] bg-black/30 px-4 py-3 text-left text-[13px] font-medium text-white/45"
+                      >
+                        Identify watch from photo — coming soon
+                      </button>
+                    </div>
+                    {(photoPreviewUrl || editingWatchId) && (
+                      <button
+                        type="button"
+                        className={classNames("mt-4 w-full min-h-[48px]", gold.btnSmSecondary)}
+                        onClick={() => {
+                          setPhotoRemoveRequested(true);
+                          pendingPhotoBlobRef.current = null;
+                          setPhotoPreviewUrl((prev) => {
+                            if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+                            return undefined;
+                          });
+                        }}
+                      >
+                        Remove photo
+                      </button>
+                    )}
+                    <p className="mt-4 text-[12px] leading-relaxed text-white/50">
+                      Images are resized (max ~1600px) and saved as JPEG in this browser. Older entries with inline photos
+                      still work.
+                    </p>
+                    <p className="mt-2 text-[12px] leading-relaxed text-white/52">
+                      Photos and details stay in your private vault.
+                    </p>
+                  </div>
+                </div>
               </div>
+            ) : null}
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <button type="submit" className={classNames("min-h-[48px]", gold.btnPrimary)}>
-                  {editingWatchId ? "Save changes" : "Add to collection"}
+            {addWatchStep === 2 ? (
+              <div className="mx-auto max-w-3xl space-y-7">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-tight text-white/90">Core details</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-white/55">
+                    Identity of the piece. You can edit these details later.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-6">
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Brand *</span>
+                    <input
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. Rolex"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Model *</span>
+                    <input
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. Submariner Date"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Reference</span>
+                    <input
+                      value={reference}
+                      onChange={(e) => setReference(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="126610LN"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Year</span>
+                    <input
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="2024"
+                      inputMode="numeric"
+                    />
+                  </label>
+                  <label className="grid gap-2.5 sm:col-span-2">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Serial number</span>
+                    <input
+                      value={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="Optional — omit or redact if you prefer"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Case size</span>
+                    <input
+                      value={caseSizeStr}
+                      onChange={(e) => setCaseSizeStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. 40 mm"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Movement</span>
+                    <input
+                      value={movementStr}
+                      onChange={(e) => setMovementStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. Automatic calibre 3235"
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            {addWatchStep === 3 ? (
+              <div className="mx-auto max-w-3xl space-y-7">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-tight text-white/90">Ownership &amp; value</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-white/55">
+                    Estimated value can be approximate. Purchase and value amounts use your collection currency below.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-6">
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">
+                      Purchase price ({CURRENCIES.find((c) => c.code === collectionCurrency)?.label ?? collectionCurrency})
+                    </span>
+                    <input
+                      value={purchasePriceStr}
+                      onChange={(e) => setPurchasePriceStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="12000"
+                      inputMode="numeric"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">{estimatedFieldLabel}</span>
+                    <input
+                      value={estimatedValue}
+                      onChange={(e) => setEstimatedValue(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="8500"
+                      inputMode="numeric"
+                    />
+                  </label>
+                  <p className="sm:col-span-2 text-[12px] leading-relaxed text-white/52">
+                    Uses your collection currency setting.
+                  </p>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Purchase date</span>
+                    <input
+                      value={purchaseDateStr}
+                      onChange={(e) => setPurchaseDateStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. 2019-06 or June 2019"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Seller / source</span>
+                    <input
+                      value={sellerStr}
+                      onChange={(e) => setSellerStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="AD, private sale, auction…"
+                    />
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            {addWatchStep === 4 ? (
+              <div className="mx-auto max-w-3xl space-y-7">
+                <div>
+                  <h3 className="text-lg font-semibold tracking-tight text-white/90">Notes &amp; review</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-white/55">
+                    Condition, provenance notes, and anything you want to remember. Review the summary, then save.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-x-6 sm:gap-y-6">
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Condition</span>
+                    <select
+                      value={condition}
+                      onChange={(e) => setCondition((e.target.value || "") as WatchCondition | "")}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px] cursor-pointer")}
+                    >
+                      <option value="">—</option>
+                      {ALL_WATCH_CONDITIONS.map((c) => (
+                        <option key={c} value={c}>
+                          {CONDITION_LABELS[c]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Box &amp; papers</span>
+                    <select
+                      value={boxPapers}
+                      onChange={(e) => setBoxPapers((e.target.value || "") as WatchBoxPapers | "")}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px] cursor-pointer")}
+                    >
+                      <option value="">—</option>
+                      {ALL_WATCH_BOXPAPERS.map((b) => (
+                        <option key={b} value={b}>
+                          {BOXPAPERS_LABELS[b]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="sm:col-span-2 grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Service history</span>
+                    <textarea
+                      value={serviceHistory}
+                      onChange={(e) => setServiceHistory(e.target.value)}
+                      className={classNames("min-h-[110px] resize-y", gold.input, gold.focus)}
+                      placeholder="Last service, work done, dates…"
+                    />
+                  </label>
+                  <label className="sm:col-span-2 grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Personal notes</span>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className={classNames("min-h-[100px] resize-y", gold.input, gold.focus)}
+                      placeholder="Dial, bracelet, story…"
+                    />
+                  </label>
+                </div>
+
+                <div className={classNames("rounded-2xl p-4 sm:p-5", gold.frame)}>
+                  <p className="text-[12px] font-semibold uppercase tracking-widest text-white/55">Summary</p>
+                  <dl className="mt-4 grid gap-2.5 text-[13px] sm:grid-cols-2">
+                    <div className="flex justify-between gap-3 border-b border-white/10 pb-2 sm:block sm:border-0 sm:pb-0">
+                      <dt className="text-white/50">Brand / model</dt>
+                      <dd className="font-medium text-white/90">
+                        {(brand.trim() || "—") + " " + (model.trim() || "")}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-b border-white/10 pb-2 sm:block sm:border-0 sm:pb-0">
+                      <dt className="text-white/50">Reference</dt>
+                      <dd className="font-medium text-white/90">{reference.trim() || "—"}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-b border-white/10 pb-2 sm:block sm:border-0 sm:pb-0">
+                      <dt className="text-white/50">Year</dt>
+                      <dd className="font-medium text-white/90">{year.trim() || "—"}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-b border-white/10 pb-2 sm:block sm:border-0 sm:pb-0">
+                      <dt className="text-white/50">Case / movement</dt>
+                      <dd className="font-medium text-white/90">
+                        {[caseSizeStr.trim(), movementStr.trim()].filter(Boolean).join(" · ") || "—"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-b border-white/10 pb-2 sm:block sm:border-0 sm:pb-0">
+                      <dt className="text-white/50">Photo</dt>
+                      <dd className="font-medium text-white/90">
+                        {photoRemoveRequested ? "Removed" : photoPreviewUrl ? "Attached" : editingWatchId ? "Existing" : "None"}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3 border-b border-white/10 pb-2 sm:block sm:border-0 sm:pb-0">
+                      <dt className="text-white/50">Est. value</dt>
+                      <dd className="font-medium text-white/90">
+                        {estimatedValue.trim()
+                          ? previewValueDisplay(estimatedValue, collectionCurrency)
+                          : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-col-reverse gap-3 border-t border-[hsla(42,22%,32%,0.45)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={goAddWatchBack}
+                  disabled={addWatchStep <= 1}
+                  className={classNames(
+                    "min-h-[48px] px-5",
+                    addWatchStep <= 1 ? "cursor-not-allowed opacity-40" : "",
+                    gold.btnSecondary,
+                  )}
+                >
+                  Back
                 </button>
                 {editingWatchId ? (
-                  <button type="button" onClick={onCancelEdit} className={classNames("min-h-[48px]", gold.btnSecondary)}>
+                  <button type="button" onClick={onCancelEdit} className={classNames("min-h-[48px] px-5", gold.btnSmSecondary)}>
                     Cancel edit
                   </button>
                 ) : null}
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                {addWatchStep < ADD_WATCH_STEP_COUNT ? (
+                  <button type="button" onClick={goAddWatchNext} className={classNames("min-h-[48px] min-w-[8rem]", gold.btnPrimary)}>
+                    Next
+                  </button>
+                ) : (
+                  <button type="submit" className={classNames("min-h-[48px] min-w-[10rem]", gold.btnPrimary)}>
+                    Save watch
+                  </button>
+                )}
               </div>
             </div>
           </form>

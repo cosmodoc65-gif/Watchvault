@@ -30,8 +30,16 @@ export type Watch = {
   reference?: string;
   year?: string;
   serialNumber?: string;
+  /** Case diameter or size notes, e.g. "40 mm" */
+  caseSize?: string;
+  /** Movement type or calibre notes */
+  movement?: string;
   purchasePrice?: number;
   estimatedValue?: number;
+  /** Free-form (e.g. YYYY-MM or "Spring 2019") */
+  purchaseDate?: string;
+  /** Seller, AD, or provenance notes */
+  seller?: string;
   condition?: WatchCondition;
   boxPapers?: WatchBoxPapers;
   serviceHistory?: string;
@@ -123,9 +131,13 @@ export function normalizeWatch(raw: unknown): Watch | null {
     reference: typeof w.reference === "string" ? w.reference : undefined,
     year: typeof w.year === "string" ? w.year : undefined,
     serialNumber: typeof w.serialNumber === "string" ? w.serialNumber : undefined,
+    caseSize: typeof w.caseSize === "string" && w.caseSize.trim() ? w.caseSize.trim() : undefined,
+    movement: typeof w.movement === "string" && w.movement.trim() ? w.movement.trim() : undefined,
     purchasePrice: typeof w.purchasePrice === "number" && Number.isFinite(w.purchasePrice) ? w.purchasePrice : undefined,
     estimatedValue:
       typeof w.estimatedValue === "number" && Number.isFinite(w.estimatedValue) ? w.estimatedValue : undefined,
+    purchaseDate: typeof w.purchaseDate === "string" && w.purchaseDate.trim() ? w.purchaseDate.trim() : undefined,
+    seller: typeof w.seller === "string" && w.seller.trim() ? w.seller.trim() : undefined,
     condition: isWatchCondition(w.condition) ? w.condition : undefined,
     boxPapers: isWatchBoxPapers(w.boxPapers) ? w.boxPapers : undefined,
     serviceHistory: typeof w.serviceHistory === "string" ? w.serviceHistory : undefined,

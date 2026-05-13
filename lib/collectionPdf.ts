@@ -331,6 +331,8 @@ export async function downloadWristfolioCollectionPdf(options: CollectionPdfOpti
     if (w.reference) bits.push(`Ref ${w.reference}`);
     if (w.year) bits.push(`Year ${w.year}`);
     if (w.serialNumber) bits.push(`Serial ${w.serialNumber}`);
+    if (w.caseSize) bits.push(`${w.caseSize}`);
+    if (w.movement) bits.push(`${w.movement}`);
     if (bits.length) {
       const line = splitToMaxLines(doc, bits.join(" · "), photoInnerW, 1)[0] ?? "";
       if (ty + lineMeta <= bottom) {
