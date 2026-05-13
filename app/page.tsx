@@ -30,9 +30,9 @@ import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/watch
 
 const FEEDBACK_MAILTO =
   "mailto:DrASchuter@proton.me?subject=" +
-  encodeURIComponent("WatchVault beta feedback") +
+  encodeURIComponent("Wristfolio beta feedback") +
   "&body=" +
-  encodeURIComponent("Hi, I tested WatchVault and my feedback is…");
+  encodeURIComponent("Hi, I tested Wristfolio and my feedback is…");
 
 function triggerTextDownload(filename: string, text: string, mime: string) {
   const blob = new Blob([text], { type: mime });
@@ -1153,7 +1153,7 @@ export default function Page() {
   const onExportBackup = useCallback(async () => {
     try {
       const json = await buildBackupJsonString(watches, collectionCurrency);
-      triggerTextDownload(`watchvault-backup-${Date.now()}.json`, json, "application/json");
+      triggerTextDownload(`wristfolio-backup-${Date.now()}.json`, json, "application/json");
       const now = Date.now();
       setLastBackupExportedAt(now);
       try {
@@ -1168,7 +1168,7 @@ export default function Page() {
 
   const onExportCsv = useCallback(() => {
     const csv = buildCollectionCsv(watches, collectionCurrency);
-    triggerTextDownload(`watchvault-export-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
+    triggerTextDownload(`wristfolio-export-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
   }, [watches, collectionCurrency]);
 
   const onExportCollectionPdf = useCallback(async () => {
@@ -1232,7 +1232,7 @@ export default function Page() {
       const text = await file.text();
       const parsed = parseBackupJson(text);
       if (!parsed) {
-        setToastMessage("That file is not a valid WatchVault backup.");
+        setToastMessage("That file is not a valid Wristfolio backup.");
         return;
       }
       setImportPreview(parsed);
@@ -1272,7 +1272,7 @@ export default function Page() {
                   "bg-gradient-to-b from-[hsla(38,38%,92%,0.98)] via-[hsla(36,30%,72%,0.92)] to-[hsla(34,28%,52%,0.88)] bg-clip-text text-2xl font-semibold leading-[1.1] tracking-[0.04em] text-transparent sm:text-[1.85rem] sm:tracking-[0.06em]",
                 )}
               >
-                WatchVault
+                Wristfolio
               </p>
               <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-[hsla(36,14%,58%,0.55)] sm:text-[11px]">
                 Private. Local. Yours.
@@ -1316,7 +1316,7 @@ export default function Page() {
             >
               <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Storage</p>
               <p className="mt-1.5">
-                Encrypted vault storage (IndexedDB) is not available in this browser profile. WatchVault will use local
+                Encrypted vault storage (IndexedDB) is not available in this browser profile. Wristfolio will use local
                 storage only — export a JSON backup regularly, especially on iPhone.
               </p>
             </div>
@@ -1343,7 +1343,7 @@ export default function Page() {
                 A dark, quiet place for the watches you love.
               </h1>
               <p className="mt-4 max-w-xl text-pretty text-sm leading-relaxed text-white/65">
-                Add a watch, upload a photo, and keep your collection at a glance. WatchVault stores your collection locally
+                Add a watch, upload a photo, and keep your collection at a glance. Wristfolio stores your collection locally
                 on this device and browser — private, with no account or cloud database. Export a backup to keep a copy or
                 carry your vault to another device.
               </p>
@@ -1481,11 +1481,11 @@ export default function Page() {
               embedded photos for a full restore.
             </p>
             <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              WatchVault stores your collection locally on this device/browser. Mobile browsers may remove local website
+              Wristfolio stores your collection locally on this device/browser. Mobile browsers may remove local website
               data. Export a backup regularly.
             </p>
             <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              To use your collection on another device, export a backup and import it there. WatchVault does not currently sync
+              To use your collection on another device, export a backup and import it there. Wristfolio does not currently sync
               between devices.
             </p>
             {watchStorageIssue && watches.length === 0 ? (
@@ -1502,7 +1502,7 @@ export default function Page() {
                 <p className="text-[11px] tracking-widest text-white/50">BACKUP REMINDER</p>
                 <p className="mt-1 text-sm text-white/70">Last export: {backupLastLabel}</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-white/45">
-                  Optional local reminder (no notifications). WatchVault will gently nudge you here when it’s time.
+                  Optional local reminder (no notifications). Wristfolio will gently nudge you here when it’s time.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1569,7 +1569,7 @@ export default function Page() {
               </button>
             </div>
             <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              WatchVault does not currently sync between devices.
+              Wristfolio does not currently sync between devices.
             </p>
             {showSubtleNeverExportedBackupCue ? (
               <div
@@ -1890,7 +1890,7 @@ export default function Page() {
                   a backup.
                 </p>
                 <p className="mt-3 text-[11px] leading-relaxed text-white/42">
-                  WatchVault stores your collection locally on this device/browser. Mobile browsers may remove local website
+                  Wristfolio stores your collection locally on this device/browser. Mobile browsers may remove local website
                   data. Export a backup regularly.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -1944,7 +1944,7 @@ export default function Page() {
 
         <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(34,26%,36%,0.55)] px-4 pb-16 pt-10">
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
-            WatchVault stores your collection locally on this device and browser — private, with no account or cloud
+            Wristfolio stores your collection locally on this device and browser — private, with no account or cloud
             database. Watches added here do not appear on other devices by themselves; export a backup and import it where
             you want your vault to live next. On phones, browsers may discard site data to save space — keep a JSON export
             you trust.

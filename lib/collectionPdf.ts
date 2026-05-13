@@ -209,12 +209,12 @@ export async function downloadWatchVaultCollectionPdf(options: CollectionPdfOpti
   doc.setTextColor(palette.goldSoft.r, palette.goldSoft.g, palette.goldSoft.b);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(27);
-  doc.text("WatchVault", margin + 4, y);
+  doc.text("Wristfolio", margin + 4, y);
   y += 13;
 
   doc.setTextColor(palette.coverCream.r, palette.coverCream.g, palette.coverCream.b);
   doc.setFontSize(15.5);
-  const titleLines = doc.splitTextToSize("WatchVault Collection Report", contentW);
+  const titleLines = doc.splitTextToSize("Wristfolio Collection Report", contentW);
   doc.text(titleLines, margin + 4, y);
   y += titleLines.length * 6.2 + 5;
 
@@ -436,5 +436,5 @@ export async function downloadWatchVaultCollectionPdf(options: CollectionPdfOpti
     drawWatchCard(watches[i], cardImages[i], left, top);
   }
 
-  doc.save(`WatchVault-Collection-Report-${reportDateStamp()}.pdf`);
+  doc.save(`Wristfolio-Collection-Report-${reportDateStamp()}.pdf`);
 }
