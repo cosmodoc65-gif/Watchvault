@@ -1,7 +1,7 @@
 "use client";
 
 import { Cormorant_Garamond } from "next/font/google";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { base64ToBlob } from "@/lib/backupEncoding";
 import { compressImageFile } from "@/lib/imageCompress";
 import { buildBackupJsonString, buildCollectionCsv } from "@/lib/backupFormats";
@@ -157,57 +157,52 @@ function classNames(...values: Array<string | false | undefined | null>) {
 }
 
 /**
- * Champagne / antique brushed gold — strong legibility on black, still boutique-restrained.
- * ~2px frames, warm metallic tone, soft separation shadows (no neon, no orange pop).
+ * Champagne / warm brushed gold — hue shifted toward ~42–44 (less orange than legacy 34–36), borders kept light enough
+ * for laptop legibility on near-black. Restrained highlights, no glossy specular band.
  */
 const gold = {
   frame:
-    "border-2 border-[hsla(35,30%,46%,0.92)] bg-white/[0.03] shadow-[inset_0_1px_0_0_hsla(38,22%,58%,0.2),0_0_0_1px_rgba(0,0,0,0.55),0_12px_44px_-14px_hsla(36,32%,14%,0.45)]",
+    "border-2 border-[hsla(43,30%,58%,0.94)] bg-white/[0.035] shadow-[inset_0_1px_0_0_hsla(44,26%,70%,0.24),0_0_0_1px_rgba(0,0,0,0.55),0_12px_44px_-14px_hsla(42,26%,10%,0.46)]",
   frameLg:
-    "border-2 border-[hsla(34,28%,44%,0.9)] bg-white/[0.03] shadow-[inset_0_1px_0_0_hsla(37,20%,56%,0.18),0_0_0_1px_rgba(0,0,0,0.58),0_14px_52px_-16px_hsla(36,30%,12%,0.48)]",
+    "border-2 border-[hsla(42,28%,54%,0.92)] bg-white/[0.035] shadow-[inset_0_1px_0_0_hsla(43,22%,64%,0.2),0_0_0_1px_rgba(0,0,0,0.58),0_14px_52px_-16px_hsla(41,24%,9%,0.48)]",
   cardHover:
-    "transition duration-300 ease-out hover:border-[hsla(33,32%,54%,0.98)] hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_0_hsla(36,24%,64%,0.24),0_0_0_1px_hsla(34,28%,32%,0.45),0_22px_58px_-18px_hsla(36,34%,10%,0.5)] hover:-translate-y-0.5",
+    "transition duration-300 ease-out hover:border-[hsla(44,32%,62%,0.98)] hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_0_hsla(45,28%,72%,0.22),0_0_0_1px_hsla(42,22%,28%,0.42),0_22px_58px_-18px_hsla(40,26%,8%,0.5)] hover:-translate-y-0.5",
   focus:
-    "focus:border-[hsla(33,30%,52%,0.95)] focus:ring-2 focus:ring-[hsla(34,32%,42%,0.45)] focus:ring-offset-2 focus:ring-offset-[#070708]",
+    "focus:border-[hsla(44,30%,60%,0.96)] focus:ring-2 focus:ring-[hsla(43,28%,40%,0.48)] focus:ring-offset-2 focus:ring-offset-[#070708]",
   input:
-    "rounded-2xl border-2 border-[hsla(34,26%,44%,0.88)] bg-black/45 px-4 py-3 text-sm text-white/92 outline-none placeholder:text-white/40",
-  tag: "rounded-lg border-2 border-[hsla(34,24%,46%,0.82)] bg-black/38 px-2 py-1 text-[11px] text-white/85 shadow-[inset_0_1px_0_0_hsla(36,18%,54%,0.12)]",
+    "rounded-2xl border-2 border-[hsla(42,26%,48%,0.9)] bg-black/45 px-4 py-3 text-sm text-white/92 outline-none placeholder:text-white/42",
+  tag: "rounded-lg border-2 border-[hsla(42,24%,50%,0.88)] bg-black/38 px-2.5 py-1.5 text-[13px] font-medium leading-snug text-white/88 shadow-[inset_0_1px_0_0_hsla(44,20%,58%,0.14)]",
   statCell:
-    "rounded-xl border-2 border-[hsla(34,24%,44%,0.85)] bg-black/42 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(36,18%,52%,0.12),0_6px_22px_-14px_hsla(36,30%,10%,0.42)]",
+    "rounded-xl border-2 border-[hsla(42,24%,48%,0.88)] bg-black/42 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(43,20%,56%,0.14),0_6px_22px_-14px_hsla(42,24%,8%,0.44)]",
   btnPrimary:
-    "rounded-2xl border-2 border-[hsla(32,34%,54%,0.96)] bg-gradient-to-b from-[hsla(33,24%,22%,0.97)] via-[hsla(32,20%,14%,0.95)] to-[hsla(30,18%,9%,0.94)] px-5 py-3 text-sm font-semibold tracking-wide text-[hsla(38,38%,95%,0.99)] shadow-[inset_0_1px_0_0_hsla(36,26%,62%,0.32)] transition hover:border-[hsla(31,36%,58%,0.99)] hover:shadow-[inset_0_1px_0_0_hsla(35,28%,68%,0.22),0_0_36px_-12px_hsla(36,36%,22%,0.45)]",
+    "rounded-2xl border-2 border-[hsla(44,34%,58%,0.96)] bg-gradient-to-b from-[hsla(42,22%,20%,0.97)] via-[hsla(40,18%,13%,0.95)] to-[hsla(38,16%,9%,0.94)] px-5 py-3 text-sm font-semibold tracking-wide text-[hsla(46,36%,96%,0.99)] shadow-[inset_0_1px_0_0_hsla(44,26%,66%,0.34)] transition hover:border-[hsla(45,36%,64%,0.99)] hover:shadow-[inset_0_1px_0_0_hsla(46,28%,74%,0.2),0_0_36px_-12px_hsla(42,30%,18%,0.42)]",
   btnSecondary:
-    "rounded-2xl border-2 border-[hsla(34,26%,46%,0.88)] bg-black/48 px-5 py-3 text-sm font-semibold tracking-wide text-white/92 shadow-[inset_0_1px_0_0_hsla(36,18%,52%,0.14)] transition hover:border-[hsla(32,30%,54%,0.95)] hover:bg-black/56 hover:text-white",
+    "rounded-2xl border-2 border-[hsla(42,26%,50%,0.9)] bg-black/48 px-5 py-3 text-sm font-semibold tracking-wide text-white/92 shadow-[inset_0_1px_0_0_hsla(43,18%,56%,0.15)] transition hover:border-[hsla(44,30%,58%,0.96)] hover:bg-black/56 hover:text-white",
   btnSmPrimary:
-    "rounded-xl border-2 border-[hsla(32,32%,52%,0.94)] bg-gradient-to-b from-[hsla(32,22%,18%,0.96)] to-[hsla(30,16%,10%,0.94)] px-3 py-2 text-xs font-semibold tracking-wide text-[hsla(38,36%,94%,0.99)] shadow-[inset_0_1px_0_0_hsla(35,24%,58%,0.28)] transition hover:border-[hsla(31,36%,56%,0.98)] hover:shadow-[0_0_28px_-10px_hsla(36,34%,18%,0.42)]",
+    "rounded-xl border-2 border-[hsla(44,30%,56%,0.95)] bg-gradient-to-b from-[hsla(42,20%,17%,0.96)] to-[hsla(38,15%,10%,0.94)] px-3 py-2 text-xs font-semibold tracking-wide text-[hsla(46,34%,95%,0.99)] shadow-[inset_0_1px_0_0_hsla(44,22%,60%,0.3)] transition hover:border-[hsla(45,34%,62%,0.98)] hover:shadow-[0_0_28px_-10px_hsla(42,28%,16%,0.4)]",
   btnSmSecondary:
-    "rounded-xl border-2 border-[hsla(34,24%,44%,0.86)] bg-black/52 px-3 py-2 text-xs tracking-wide text-white/90 transition hover:border-[hsla(32,30%,52%,0.95)] hover:bg-black/60",
+    "rounded-xl border-2 border-[hsla(42,22%,48%,0.88)] bg-black/52 px-3 py-2 text-xs font-medium tracking-wide text-white/90 transition hover:border-[hsla(44,28%,56%,0.95)] hover:bg-black/60",
   pill:
-    "rounded-full border-2 border-[hsla(34,26%,46%,0.88)] bg-black/40 px-3 py-1 text-[11px] tracking-widest text-white/82 shadow-[inset_0_1px_0_0_hsla(36,18%,54%,0.14)]",
+    "rounded-full border-2 border-[hsla(42,26%,52%,0.9)] bg-black/40 px-3 py-1.5 text-[12px] font-semibold tracking-widest text-white/86 shadow-[inset_0_1px_0_0_hsla(44,18%,60%,0.15)]",
 };
 
-/** Refined monogram: vault / crystal — metallic gold strokes (slightly heavier for large header scale) */
+/** Horology-inspired mark: case + dial ring + twelve index + single hand — minimal, not illustrative. */
 function VaultMark({ className }: { className?: string }) {
+  const gid = `wfMarkGold-${useId().replace(/:/g, "")}`;
   return (
     <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden>
       <defs>
-        <linearGradient id="vaultMarkGold" x1="8" y1="6" x2="34" y2="36" gradientUnits="userSpaceOnUse">
-          <stop stopColor="hsl(40, 48%, 88%)" />
-          <stop offset="0.42" stopColor="hsl(36, 38%, 66%)" />
-          <stop offset="1" stopColor="hsl(32, 34%, 48%)" />
+        <linearGradient id={gid} x1="7" y1="6" x2="35" y2="36" gradientUnits="userSpaceOnUse">
+          <stop stopColor="hsl(46, 36%, 92%)" />
+          <stop offset="0.45" stopColor="hsl(43, 26%, 72%)" />
+          <stop offset="1" stopColor="hsl(40, 24%, 52%)" />
         </linearGradient>
       </defs>
-      <rect x="5" y="5" width="30" height="30" rx="7" stroke="url(#vaultMarkGold)" strokeWidth="1.5" />
-      <rect x="9" y="9" width="22" height="22" rx="5" stroke="url(#vaultMarkGold)" strokeWidth="1" opacity="0.58" />
-      <path
-        d="M20 12.5c-3.2 0-5.8 2.2-5.8 5 0 2.1 1.4 3.8 3.4 4.5L20 27l2.4-5c2-0.7 3.4-2.4 3.4-4.5 0-2.8-2.6-5-5.8-5Z"
-        stroke="url(#vaultMarkGold)"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-        fill="none"
-        opacity="0.98"
-      />
-      <path d="M20 22.2v4.8" stroke="url(#vaultMarkGold)" strokeWidth="1.05" strokeLinecap="round" opacity="0.82" />
+      <rect x="6.25" y="6.25" width="27.5" height="27.5" rx="6.25" stroke={`url(#${gid})`} strokeWidth="1.2" />
+      <circle cx="20" cy="20.25" r="9" stroke={`url(#${gid})`} strokeWidth="0.75" opacity="0.42" />
+      <path d="M20 11.75v2.35" stroke={`url(#${gid})`} strokeWidth="1.05" strokeLinecap="round" opacity="0.92" />
+      <path d="M20 20.25l-5.1-4.35" stroke={`url(#${gid})`} strokeWidth="1.1" strokeLinecap="round" opacity="0.95" />
+      <circle cx="20" cy="20.25" r="1.2" fill={`url(#${gid})`} opacity="0.98" />
     </svg>
   );
 }
@@ -304,12 +299,12 @@ function CurrencyDropdown({
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKeyDownBtn}
         className={classNames(
-          "flex w-full min-h-[44px] cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[hsla(34,26%,44%,0.88)] bg-black/45 px-3 py-2.5 text-left text-sm text-white/92 outline-none transition",
-          "hover:border-[hsla(32,30%,52%,0.95)] focus-visible:border-[hsla(33,30%,52%,0.95)] focus-visible:ring-2 focus-visible:ring-[hsla(34,32%,42%,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070708]",
+          "flex w-full min-h-[44px] cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[hsla(42,26%,48%,0.9)] bg-black/45 px-3 py-2.5 text-left text-sm text-white/92 outline-none transition",
+          "hover:border-[hsla(44,30%,58%,0.96)] focus-visible:border-[hsla(44,30%,58%,0.96)] focus-visible:ring-2 focus-visible:ring-[hsla(43,28%,40%,0.48)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070708]",
         )}
       >
         <span className="truncate">{current}</span>
-        <span className="shrink-0 text-[10px] text-[hsla(36,24%,58%,0.88)]" aria-hidden>
+        <span className="shrink-0 text-[11px] text-[hsla(44,22%,62%,0.9)]" aria-hidden>
           {open ? "▴" : "▾"}
         </span>
       </button>
@@ -322,7 +317,7 @@ function CurrencyDropdown({
           onKeyDown={onKeyDownList}
           ref={listRef}
           className={classNames(
-            "absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-2 border-[hsla(33,32%,52%,0.95)] bg-[#0a0a0c] py-1 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] outline-none",
+            "absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-2 border-[hsla(44,30%,58%,0.95)] bg-[#0a0a0c] py-1 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] outline-none",
           )}
         >
           {CURRENCIES.map((c, i) => (
@@ -334,7 +329,7 @@ function CurrencyDropdown({
                 className={classNames(
                   "flex w-full min-h-[44px] items-center px-3 py-2.5 text-left text-sm transition",
                   i === highlight ? "bg-white/[0.08] text-white" : "text-white/88",
-                  c.code === value ? "font-semibold text-[hsla(38,36%,92%,0.98)]" : "font-normal",
+                  c.code === value ? "font-semibold text-[hsla(46,38%,94%,0.98)]" : "font-normal",
                   "hover:bg-white/[0.06] hover:text-white",
                 )}
                 onMouseEnter={() => setHighlight(i)}
@@ -362,10 +357,10 @@ function Placeholder() {
         <div
           className={classNames(
             "mx-auto mb-2 h-10 w-10 rounded-full bg-black/30",
-            "border-2 border-[hsla(34,26%,44%,0.82)] shadow-[inset_0_1px_0_0_hsla(36,18%,52%,0.12)]",
+            "border-2 border-[hsla(42,24%,50%,0.85)] shadow-[inset_0_1px_0_0_hsla(44,18%,58%,0.14)]",
           )}
         />
-        <p className="text-xs tracking-wide text-white/55">No photo</p>
+        <p className="text-[13px] font-medium tracking-wide text-white/62">No photo</p>
       </div>
     </div>
   );
@@ -417,7 +412,7 @@ function WatchCard({
           {watch.isDemo ? (
             <span
               className={classNames(
-                "pointer-events-none absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest",
+                "pointer-events-none absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest",
                 gold.pill,
               )}
             >
@@ -430,10 +425,10 @@ function WatchCard({
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-wide text-white/92">{watch.brand}</p>
-            <p className="mt-0.5 truncate text-sm text-white/72">{watch.model}</p>
+            <p className="truncate text-[0.9375rem] font-semibold tracking-wide text-white/93">{watch.brand}</p>
+            <p className="mt-0.5 truncate text-[0.9375rem] font-medium text-white/76">{watch.model}</p>
           </div>
-          <span className="hidden shrink-0 rounded-full border-2 border-[hsla(32,32%,50%,0.92)] bg-[hsla(30,16%,8%,0.78)] px-2 py-1 text-[10px] tracking-widest text-[hsla(38,36%,92%,0.97)] shadow-[inset_0_1px_0_0_hsla(36,22%,56%,0.2)] sm:inline">
+          <span className="hidden shrink-0 rounded-full border-2 border-[hsla(44,30%,56%,0.92)] bg-[hsla(40,14%,8%,0.82)] px-2 py-1 text-[11px] font-medium tracking-widest text-[hsla(46,36%,94%,0.97)] shadow-[inset_0_1px_0_0_hsla(44,22%,58%,0.22)] sm:inline">
             VAULTED
           </span>
         </div>
@@ -537,71 +532,71 @@ function WatchDetailPanel({
         <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p id="watch-detail-title" className="text-lg font-semibold tracking-tight text-white/95">
+              <p id="watch-detail-title" className="text-lg font-semibold tracking-tight text-white/96">
                 {watch.brand}
               </p>
-              <p className="mt-1 text-sm text-white/70">{watch.model}</p>
+              <p className="mt-1 text-[0.9375rem] font-medium text-white/74">{watch.model}</p>
             </div>
             {watch.isDemo ? <span className={gold.pill}>Demo sample</span> : null}
           </div>
 
-          <dl className="mt-5 grid gap-3 text-sm">
+          <dl className="mt-5 grid gap-3.5 text-[0.9375rem] leading-snug">
             {watch.reference ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Reference</dt>
-                <dd className="text-right font-medium text-white/90">{watch.reference}</dd>
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Reference</dt>
+                <dd className="text-right font-medium text-white/92">{watch.reference}</dd>
               </div>
             ) : null}
             {watch.year ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Year</dt>
-                <dd className="text-right font-medium text-white/90">{watch.year}</dd>
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Year</dt>
+                <dd className="text-right font-medium text-white/92">{watch.year}</dd>
               </div>
             ) : null}
             {watch.serialNumber ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Serial</dt>
-                <dd className="text-right font-medium text-white/90">{watch.serialNumber}</dd>
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Serial</dt>
+                <dd className="text-right font-medium text-white/92">{watch.serialNumber}</dd>
               </div>
             ) : null}
             {typeof watch.purchasePrice === "number" ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Purchase price</dt>
-                <dd className="text-right font-medium text-white/90">
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Purchase price</dt>
+                <dd className="text-right font-medium text-white/92">
                   {formatCollectionCurrency(watch.purchasePrice, currency)}
                 </dd>
               </div>
             ) : null}
             {typeof watch.estimatedValue === "number" ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Estimated value</dt>
-                <dd className="text-right font-medium text-white/90">
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Estimated value</dt>
+                <dd className="text-right font-medium text-white/92">
                   {formatCollectionCurrency(watch.estimatedValue, currency)}
                 </dd>
               </div>
             ) : null}
             {watch.condition ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Condition</dt>
-                <dd className="text-right font-medium text-white/90">{CONDITION_LABELS[watch.condition]}</dd>
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Condition</dt>
+                <dd className="text-right font-medium text-white/92">{CONDITION_LABELS[watch.condition]}</dd>
               </div>
             ) : null}
             {watch.boxPapers ? (
-              <div className="flex flex-wrap justify-between gap-2 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Box &amp; papers</dt>
-                <dd className="text-right font-medium text-white/90">{BOXPAPERS_LABELS[watch.boxPapers]}</dd>
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Box &amp; papers</dt>
+                <dd className="text-right font-medium text-white/92">{BOXPAPERS_LABELS[watch.boxPapers]}</dd>
               </div>
             ) : null}
             {watch.serviceHistory ? (
-              <div className="grid gap-1 border-b border-white/10 pb-2">
-                <dt className="text-white/50">Service history</dt>
-                <dd className="whitespace-pre-wrap text-white/85">{watch.serviceHistory}</dd>
+              <div className="grid gap-1.5 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Service history</dt>
+                <dd className="whitespace-pre-wrap font-normal leading-relaxed text-white/88">{watch.serviceHistory}</dd>
               </div>
             ) : null}
             {watch.notes ? (
-              <div className="grid gap-1">
-                <dt className="text-white/50">Notes</dt>
-                <dd className="whitespace-pre-wrap text-white/85">{watch.notes}</dd>
+              <div className="grid gap-1.5">
+                <dt className="font-medium text-white/62">Notes</dt>
+                <dd className="whitespace-pre-wrap font-normal leading-relaxed text-white/88">{watch.notes}</dd>
               </div>
             ) : null}
           </dl>
@@ -1257,7 +1252,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b-2 border-[hsla(34,28%,42%,0.82)] bg-black/50 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b-2 border-[hsla(42,26%,38%,0.88)] bg-black/50 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-3 px-4 py-3.5 sm:gap-x-4 sm:py-4 md:py-5">
           <div className="flex min-w-0 min-[360px]:flex-1 items-center gap-2.5 sm:gap-3.5 md:gap-4">
             <div
@@ -1272,12 +1267,12 @@ export default function Page() {
               <p
                 className={classNames(
                   vaultSerif.className,
-                  "bg-gradient-to-b from-[hsla(42,45%,98%,1)] via-[hsla(38,38%,88%,0.98)] to-[hsla(36,36%,64%,0.96)] bg-clip-text text-[1.625rem] font-bold leading-[1.05] tracking-[0.035em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[400px]:text-[1.85rem] sm:text-[2.2rem] sm:tracking-[0.05em] md:text-[2.45rem] md:tracking-[0.055em]",
+                  "bg-gradient-to-b from-[hsla(46,40%,99%,0.99)] via-[hsla(44,32%,90%,0.98)] to-[hsla(42,30%,68%,0.97)] bg-clip-text text-[1.35rem] font-bold leading-[1.05] tracking-[0.03em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[380px]:text-[1.55rem] min-[400px]:text-[1.75rem] sm:text-[2.1rem] sm:tracking-[0.05em] md:text-[2.42rem] md:tracking-[0.055em]",
                 )}
               >
                 Wristfolio
               </p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(38,26%,72%,0.82)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em]">
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,28%,76%,0.88)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em]">
                 Private. Local. Yours.
               </p>
             </div>
@@ -1286,7 +1281,7 @@ export default function Page() {
           <nav className="flex max-w-[100vw] shrink-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
             <a
               href={FEEDBACK_MAILTO}
-              className={classNames("hidden min-h-[40px] items-center rounded-xl px-2.5 text-xs tracking-wide text-[hsla(36,22%,62%,0.92)] underline-offset-4 hover:text-white/90 sm:inline-flex")}
+              className={classNames("hidden min-h-[40px] items-center rounded-xl px-2.5 text-[13px] font-medium tracking-wide text-[hsla(44,24%,68%,0.95)] underline-offset-4 hover:text-white/90 sm:inline-flex")}
             >
               Feedback
             </a>
@@ -1338,20 +1333,20 @@ export default function Page() {
             </div>
           </div>
         ) : null}
-        <section className="pb-10 pt-12 sm:pt-16">
+        <section className="pb-10 pt-14 sm:pt-[4.25rem]">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
-              <p className={classNames("mb-3 inline-flex items-center gap-2", gold.pill)}>YOUR COLLECTION, REFINED</p>
-              <h1 className="text-balance text-4xl font-semibold tracking-tight text-white/95 sm:text-5xl">
+              <p className={classNames("mb-5 inline-flex items-center gap-2", gold.pill)}>YOUR COLLECTION, REFINED</p>
+              <h1 className="mt-1 text-balance text-4xl font-semibold tracking-tight text-white/95 sm:text-5xl">
                 A dark, quiet place for the watches you love.
               </h1>
-              <p className="mt-4 max-w-xl text-pretty text-sm leading-relaxed text-white/65">
+              <p className="mt-6 max-w-xl text-pretty text-[0.9375rem] font-normal leading-relaxed text-white/70">
                 Add a watch, upload a photo, and keep your collection at a glance. Wristfolio stores your collection locally
                 on this device and browser — private, with no account or cloud database. Export a backup to keep a copy or
                 carry your vault to another device.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-10 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
@@ -1368,44 +1363,44 @@ export default function Page() {
                 </button>
               </div>
 
-              <div className="mt-6 grid gap-1">
-                <p className="text-xs tracking-wide text-white/45">{isMounted ? collectionLabel : "Loading collection..."}</p>
-                <p className="text-xs tracking-wide text-white/55">
+              <div className="mt-9 grid gap-1.5">
+                <p className="text-[13px] font-medium tracking-wide text-white/52">{isMounted ? collectionLabel : "Loading collection..."}</p>
+                <p className="text-[13px] font-normal leading-relaxed tracking-wide text-white/60">
                   Your collection stays on this device and browser. Export a backup to open it elsewhere — nothing syncs
                   automatically.
                 </p>
-                <p className="text-xs tracking-wide text-white/45">Saved watches: {isMounted ? watches.length : "—"}</p>
-                <p className="text-xs tracking-wide text-white/45">
+                <p className="text-[13px] font-medium tracking-wide text-white/52">Saved watches: {isMounted ? watches.length : "—"}</p>
+                <p className="text-[13px] font-medium tracking-wide text-white/52">
                   Total Collection Value:{" "}
                   {isMounted ? formatCollectionCurrency(totalCollectionValue, collectionCurrency) : "—"}
                 </p>
               </div>
 
-              <div className={classNames("mt-6 grid gap-3 rounded-2xl p-4 sm:max-w-xl", gold.frameLg)}>
-                <div className="border-b border-[hsla(34,26%,40%,0.45)] pb-3">
-                  <p className="text-[11px] tracking-widest text-white/50">COLLECTION CURRENCY</p>
-                  <p className="mt-1 text-[10px] leading-relaxed text-white/38">
+              <div className={classNames("mt-8 grid gap-3.5 rounded-2xl p-4 sm:max-w-xl", gold.frameLg)}>
+                <div className="border-b border-[hsla(42,22%,38%,0.55)] pb-3.5">
+                  <p className="text-[12px] font-semibold tracking-widest text-white/58">COLLECTION CURRENCY</p>
+                  <p className="mt-1.5 text-[11px] font-normal leading-relaxed text-white/48">
                     Display and entry currency. Values are not converted when you switch.
                   </p>
                   <div className="mt-2">
                     <CurrencyDropdown value={collectionCurrency} onChange={setCollectionCurrency} />
                   </div>
                 </div>
-                <p className="text-[11px] tracking-widest text-white/55">COLLECTION STATISTICS</p>
+                <p className="text-[12px] font-semibold tracking-widest text-white/58">COLLECTION STATISTICS</p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   <div className={gold.statCell}>
-                    <p className="text-[11px] tracking-widest text-white/45">TOTAL</p>
-                    <p className="mt-1 text-sm font-semibold text-white/90">{isMounted ? watches.length : "—"}</p>
+                    <p className="text-[12px] font-semibold tracking-widest text-white/50">TOTAL</p>
+                    <p className="mt-1.5 text-[0.9375rem] font-semibold text-white/92">{isMounted ? watches.length : "—"}</p>
                   </div>
                   <div className={gold.statCell}>
-                    <p className="text-[11px] tracking-widest text-white/45">COMMON BRAND</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-white/90">
+                    <p className="text-[12px] font-semibold tracking-widest text-white/50">COMMON BRAND</p>
+                    <p className="mt-1.5 truncate text-[0.9375rem] font-semibold text-white/92">
                       {isMounted ? (mostCommonBrand ?? "—") : "—"}
                     </p>
                   </div>
                   <div className={gold.statCell}>
-                    <p className="text-[11px] tracking-widest text-white/45">TOTAL VALUE</p>
-                    <p className="mt-1 text-sm font-semibold text-white/90">
+                    <p className="text-[12px] font-semibold tracking-widest text-white/50">TOTAL VALUE</p>
+                    <p className="mt-1.5 text-[0.9375rem] font-semibold text-white/92">
                       {isMounted ? formatCollectionCurrency(totalCollectionValue, collectionCurrency) : "—"}
                     </p>
                   </div>
@@ -1414,10 +1409,10 @@ export default function Page() {
             </div>
 
             <div className={classNames("relative overflow-hidden rounded-3xl p-5", gold.frameLg)}>
-              <div className="absolute inset-0 bg-[radial-gradient(650px_350px_at_30%_20%,hsla(35,28%,48%,0.22),transparent_60%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(650px_350px_at_30%_20%,hsla(44,26%,52%,0.2),transparent_60%)]" />
               <div className="relative">
-                <p className="text-xs tracking-widest text-white/55">PREVIEW</p>
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <p className="text-[13px] font-semibold tracking-widest text-white/62">PREVIEW</p>
+                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className={classNames("aspect-[4/3] overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
                     {photoPreviewUrl ? (
                       <img
@@ -1430,10 +1425,10 @@ export default function Page() {
                       <Placeholder />
                     )}
                   </div>
-                  <div className={classNames("rounded-2xl bg-white/[0.04] p-4", gold.frame)}>
-                    <p className="text-[11px] tracking-widest text-white/55">DETAILS</p>
-                    <p className="mt-3 truncate text-sm font-semibold text-white/90">{brand || "Brand"}</p>
-                    <p className="truncate text-xs text-white/65">{model || "Model"}</p>
+                  <div className={classNames("rounded-2xl bg-white/[0.04] p-4 sm:p-5", gold.frame)}>
+                    <p className="text-[12px] font-semibold tracking-widest text-white/62">DETAILS</p>
+                    <p className="mt-3.5 truncate text-[0.9375rem] font-semibold text-white/92">{brand || "Brand"}</p>
+                    <p className="truncate text-[13px] font-medium text-white/72">{model || "Model"}</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <span className={gold.tag}>Ref. {reference || "—"}</span>
                       <span className={gold.tag}>Year {year || "—"}</span>
@@ -1451,10 +1446,10 @@ export default function Page() {
                         <span className={gold.tag}>Box / papers —</span>
                       )}
                     </div>
-                    <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-white/55">
+                    <p className="mt-3.5 line-clamp-2 text-[13px] font-normal leading-relaxed text-white/62">
                       {serviceHistory.trim() ? serviceHistory : "Service history…"}
                     </p>
-                    <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/55">{notes || "Notes…"}</p>
+                    <p className="mt-2 line-clamp-2 text-[13px] font-normal leading-relaxed text-white/62">{notes || "Notes…"}</p>
                   </div>
                 </div>
               </div>
@@ -1501,7 +1496,7 @@ export default function Page() {
               </div>
             ) : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-center">
-              <div className="rounded-2xl border-2 border-[hsla(34,24%,44%,0.78)] bg-black/35 px-4 py-3">
+              <div className="rounded-2xl border-2 border-[hsla(42,24%,46%,0.82)] bg-black/35 px-4 py-3">
                 <p className="text-[11px] tracking-widest text-white/50">BACKUP REMINDER</p>
                 <p className="mt-1 text-sm text-white/70">Last export: {backupLastLabel}</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-white/45">
@@ -1577,11 +1572,11 @@ export default function Page() {
             {showSubtleNeverExportedBackupCue ? (
               <div
                 className={classNames(
-                  "mt-3 max-w-2xl rounded-2xl border border-[hsla(34,26%,44%,0.55)] bg-black/30 px-3 py-2.5 text-[11px] leading-relaxed text-[hsla(38,28%,78%,0.82)]",
+                  "mt-3 max-w-2xl rounded-2xl border border-[hsla(42,26%,44%,0.58)] bg-black/30 px-3 py-2.5 text-[12px] font-normal leading-relaxed text-[hsla(44,28%,80%,0.88)]",
                   gold.frame,
                 )}
               >
-                <p className="text-[10px] font-medium uppercase tracking-widest text-[hsla(36,18%,52%,0.75)]">Backup</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[hsla(44,22%,58%,0.78)]">Backup</p>
                 <p className="mt-1">
                   Backup recommended: export your collection to avoid losing local data. Mobile browsers may clear site
                   storage without warning.
@@ -1761,14 +1756,14 @@ export default function Page() {
                     <Placeholder />
                   )}
                 </div>
-                <div className="border-t-2 border-[hsla(34,26%,42%,0.72)] p-3">
+                <div className="border-t-2 border-[hsla(42,24%,40%,0.75)] p-3">
                   <label className="grid gap-2">
                     <span className="text-xs tracking-wide text-white/55">Photo</span>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => void onPickPhoto(e.target.files?.[0] ?? null)}
-                      className="block w-full min-h-[44px] text-xs text-white/78 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(34,26%,44%,0.88)] file:bg-black/45 file:px-3 file:py-2.5 file:text-xs file:font-medium file:text-white/90 hover:file:border-[hsla(32,32%,52%,0.95)] hover:file:bg-black/55"
+                      className="block w-full min-h-[44px] text-[13px] font-medium text-white/80 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(42,26%,48%,0.9)] file:bg-black/45 file:px-3 file:py-2.5 file:text-[13px] file:font-medium file:text-white/90 hover:file:border-[hsla(44,30%,58%,0.96)] hover:file:bg-black/55"
                     />
                   </label>
                   {(photoPreviewUrl || editingWatchId) && (
@@ -1920,7 +1915,7 @@ export default function Page() {
           ) : (
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {watches.some((w) => w.isDemo) ? (
-                <div className="col-span-full flex flex-col gap-3 rounded-2xl border-2 border-dashed border-[hsla(34,28%,46%,0.55)] bg-black/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="col-span-full flex flex-col gap-3 rounded-2xl border-2 border-dashed border-[hsla(42,26%,48%,0.58)] bg-black/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-white/70">
                     <span className="font-semibold text-[hsla(38,34%,88%,0.95)]">Demo samples</span> in your list — remove
                     them anytime without touching your real watches.
@@ -1945,7 +1940,7 @@ export default function Page() {
           )}
         </section>
 
-        <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(34,26%,36%,0.55)] px-4 pb-16 pt-10">
+        <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(42,24%,34%,0.58)] px-4 pb-16 pt-10">
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
             Wristfolio stores your collection locally on this device and browser — private, with no account or cloud
             database. Watches added here do not appear on other devices by themselves; export a backup and import it where
@@ -1954,7 +1949,7 @@ export default function Page() {
           </p>
           <a
             href={FEEDBACK_MAILTO}
-            className="mt-4 inline-flex min-h-[44px] items-center text-sm font-medium tracking-wide text-[hsla(36,26%,68%,0.95)] underline decoration-[hsla(34,28%,46%,0.75)] underline-offset-4 hover:text-white/90"
+            className="mt-4 inline-flex min-h-[44px] items-center text-[0.9375rem] font-medium tracking-wide text-[hsla(44,26%,72%,0.96)] underline decoration-[hsla(42,26%,46%,0.78)] underline-offset-4 hover:text-white/90"
           >
             Beta feedback
           </a>
@@ -1963,7 +1958,7 @@ export default function Page() {
 
       {toastMessage ? (
         <div
-          className="fixed bottom-6 left-1/2 z-[130] w-[min(92vw,28rem)] -translate-x-1/2 rounded-2xl border-2 border-[hsla(33,32%,52%,0.9)] bg-[#0c0c0f]/95 px-4 py-3 text-center text-sm text-white/90 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] backdrop-blur-md"
+          className="fixed bottom-6 left-1/2 z-[130] w-[min(92vw,28rem)] -translate-x-1/2 rounded-2xl border-2 border-[hsla(44,32%,56%,0.92)] bg-[#0c0c0f]/95 px-4 py-3 text-center text-[0.9375rem] font-medium text-white/90 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] backdrop-blur-md"
           role="status"
         >
           {toastMessage}
