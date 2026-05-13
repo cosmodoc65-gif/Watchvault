@@ -186,28 +186,28 @@ const gold = {
     "rounded-full border-2 border-[hsla(34,26%,46%,0.88)] bg-black/40 px-3 py-1 text-[11px] tracking-widest text-white/82 shadow-[inset_0_1px_0_0_hsla(36,18%,54%,0.14)]",
 };
 
-/** Refined monogram: vault / crystal — metallic gold strokes */
+/** Refined monogram: vault / crystal — metallic gold strokes (slightly heavier for large header scale) */
 function VaultMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden>
       <defs>
         <linearGradient id="vaultMarkGold" x1="8" y1="6" x2="34" y2="36" gradientUnits="userSpaceOnUse">
-          <stop stopColor="hsl(38, 42%, 78%)" />
-          <stop offset="0.45" stopColor="hsl(34, 32%, 58%)" />
-          <stop offset="1" stopColor="hsl(30, 28%, 42%)" />
+          <stop stopColor="hsl(40, 48%, 88%)" />
+          <stop offset="0.42" stopColor="hsl(36, 38%, 66%)" />
+          <stop offset="1" stopColor="hsl(32, 34%, 48%)" />
         </linearGradient>
       </defs>
-      <rect x="5" y="5" width="30" height="30" rx="7" stroke="url(#vaultMarkGold)" strokeWidth="1.35" />
-      <rect x="9" y="9" width="22" height="22" rx="5" stroke="url(#vaultMarkGold)" strokeWidth="0.9" opacity="0.55" />
+      <rect x="5" y="5" width="30" height="30" rx="7" stroke="url(#vaultMarkGold)" strokeWidth="1.5" />
+      <rect x="9" y="9" width="22" height="22" rx="5" stroke="url(#vaultMarkGold)" strokeWidth="1" opacity="0.58" />
       <path
         d="M20 12.5c-3.2 0-5.8 2.2-5.8 5 0 2.1 1.4 3.8 3.4 4.5L20 27l2.4-5c2-0.7 3.4-2.4 3.4-4.5 0-2.8-2.6-5-5.8-5Z"
         stroke="url(#vaultMarkGold)"
-        strokeWidth="1.1"
+        strokeWidth="1.2"
         strokeLinejoin="round"
         fill="none"
-        opacity="0.95"
+        opacity="0.98"
       />
-      <path d="M20 22.2v4.8" stroke="url(#vaultMarkGold)" strokeWidth="1" strokeLinecap="round" opacity="0.75" />
+      <path d="M20 22.2v4.8" stroke="url(#vaultMarkGold)" strokeWidth="1.05" strokeLinecap="round" opacity="0.82" />
     </svg>
   );
 }
@@ -1258,32 +1258,32 @@ export default function Page() {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b-2 border-[hsla(34,28%,42%,0.82)] bg-black/50 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:py-5">
-          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-3 gap-y-3 px-4 py-3.5 sm:gap-x-4 sm:py-4 md:py-5">
+          <div className="flex min-w-0 min-[360px]:flex-1 items-center gap-2.5 sm:gap-3.5 md:gap-4">
             <div
               className={classNames(
-                "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-black/50 to-black/30 sm:h-[52px] sm:w-[52px]",
+                "relative flex h-[3.5rem] w-[3.5rem] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-black/50 to-black/30 sm:h-16 sm:w-16 md:h-[4.25rem] md:w-[4.25rem]",
                 gold.frame,
               )}
             >
-              <VaultMark className="h-7 w-7 sm:h-9 sm:w-9" />
+              <VaultMark className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" />
             </div>
             <div className="min-w-0">
               <p
                 className={classNames(
                   vaultSerif.className,
-                  "bg-gradient-to-b from-[hsla(38,38%,92%,0.98)] via-[hsla(36,30%,72%,0.92)] to-[hsla(34,28%,52%,0.88)] bg-clip-text text-2xl font-semibold leading-[1.1] tracking-[0.04em] text-transparent sm:text-[1.85rem] sm:tracking-[0.06em]",
+                  "bg-gradient-to-b from-[hsla(42,45%,98%,1)] via-[hsla(38,38%,88%,0.98)] to-[hsla(36,36%,64%,0.96)] bg-clip-text text-[1.625rem] font-bold leading-[1.05] tracking-[0.035em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[400px]:text-[1.85rem] sm:text-[2.2rem] sm:tracking-[0.05em] md:text-[2.45rem] md:tracking-[0.055em]",
                 )}
               >
                 Wristfolio
               </p>
-              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-[hsla(36,14%,58%,0.55)] sm:text-[11px]">
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(38,26%,72%,0.82)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em]">
                 Private. Local. Yours.
               </p>
             </div>
           </div>
 
-          <nav className="flex max-w-[100vw] shrink-0 flex-wrap items-center justify-end gap-2">
+          <nav className="flex max-w-[100vw] shrink-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
             <a
               href={FEEDBACK_MAILTO}
               className={classNames("hidden min-h-[40px] items-center rounded-xl px-2.5 text-xs tracking-wide text-[hsla(36,22%,62%,0.92)] underline-offset-4 hover:text-white/90 sm:inline-flex")}
