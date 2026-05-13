@@ -11,7 +11,7 @@ npm run dev
 
 ## Key behaviors
 
-- “Start your vault” scrolls to the add-watch form.
+- “Start your collection” scrolls to the add-watch form.
 - “View collection” scrolls to the collection section.
 - Header “Add Watch” scrolls to the add-watch form.
 - Uploading a photo creates an immediate preview URL via `URL.createObjectURL(file)` and stores it in the watch object.

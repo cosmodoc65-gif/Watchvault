@@ -429,7 +429,7 @@ function WatchCard({
             <p className="mt-0.5 truncate text-[0.9375rem] font-medium text-white/76">{watch.model}</p>
           </div>
           <span className="hidden shrink-0 rounded-full border-2 border-[hsla(44,30%,56%,0.92)] bg-[hsla(40,14%,8%,0.82)] px-2 py-1 text-[11px] font-medium tracking-widest text-[hsla(46,36%,94%,0.97)] shadow-[inset_0_1px_0_0_hsla(44,22%,58%,0.22)] sm:inline">
-            VAULTED
+            CATALOGUED
           </span>
         </div>
 
@@ -795,7 +795,7 @@ export default function Page() {
       if (r.primaryWritten === "localStorage") {
         setCollectionPersistenceWarning(
           r.indexedDbTried
-            ? "IndexedDB could not be used for the main vault store; your collection was saved using browser storage, which mobile Safari may clear. Export a JSON backup regularly."
+            ? "IndexedDB could not be used for the main collection store; your collection was saved using browser storage, which mobile Safari may clear. Export a JSON backup regularly."
             : "IndexedDB is not available in this browser profile; your collection is stored in browser storage only. Export a JSON backup regularly — especially on iPhone.",
         );
       } else if (r.primaryWritten === "indexeddb" && !r.localStorageMirrorOk) {
@@ -1314,7 +1314,7 @@ export default function Page() {
             >
               <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Storage</p>
               <p className="mt-1.5">
-                Encrypted vault storage (IndexedDB) is not available in this browser profile. Wristfolio will use local
+                Encrypted collection storage (IndexedDB) is not available in this browser profile. Wristfolio will use local
                 storage only — export a JSON backup regularly, especially on iPhone.
               </p>
             </div>
@@ -1343,7 +1343,7 @@ export default function Page() {
               <p className="mt-6 max-w-xl text-pretty text-[0.9375rem] font-normal leading-relaxed text-white/70">
                 Add a watch, upload a photo, and keep your collection at a glance. Wristfolio stores your collection locally
                 on this device and browser — private, with no account or cloud database. Export a backup to keep a copy or
-                carry your vault to another device.
+                carry your collection to another device.
               </p>
 
               <div className="mt-10 flex flex-wrap gap-3">
@@ -1352,7 +1352,7 @@ export default function Page() {
                   onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
                   className={gold.btnPrimary}
                 >
-                  Start your vault
+                  Start your collection
                 </button>
                 <button
                   type="button"
@@ -1472,7 +1472,7 @@ export default function Page() {
           />
           <div className={classNames("rounded-3xl p-5 sm:p-6", gold.frameLg)}>
             <p className="text-[11px] tracking-widest text-white/55">BACKUP &amp; EXPORT</p>
-            <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/92">Protect your vault</h2>
+            <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/92">Protect your collection</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/58">
               Your collection is stored locally on this device and browser — private by design, no cloud. To use it on
               another device, export a backup and import it there. Export regularly; JSON backups include watch details and
@@ -1531,7 +1531,7 @@ export default function Page() {
             {backupIsDue ? (
               <div className="mt-4 rounded-2xl border border-amber-200/20 bg-amber-200/5 px-4 py-3">
                 <p className="text-sm text-amber-100/85">
-                  Backup recommended. Your vault is local-only — export a JSON backup to keep a copy.
+                  Backup recommended. Your collection is local-only — export a JSON backup to keep a copy.
                 </p>
                 <div className="mt-3">
                   <button
@@ -1880,11 +1880,11 @@ export default function Page() {
                     noWatchDataFound ? "mt-6" : "",
                   )}
                 >
-                  EMPTY VAULT
+                  EMPTY COLLECTION
                 </p>
-                <p className="mt-5 text-lg font-semibold tracking-tight text-white/92">Your vault is ready</p>
+                <p className="mt-5 text-lg font-semibold tracking-tight text-white/92">Your collection is ready</p>
                 <p className="mt-3 text-sm leading-relaxed text-white/58">
-                  Start your private watch vault by adding your first watch. Everything stays on this device until you export
+                  Start your private watch collection by adding your first watch. Everything stays on this device until you export
                   a backup.
                 </p>
                 <p className="mt-3 text-[11px] leading-relaxed text-white/42">
@@ -1944,7 +1944,7 @@ export default function Page() {
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
             Wristfolio stores your collection locally on this device and browser — private, with no account or cloud
             database. Watches added here do not appear on other devices by themselves; export a backup and import it where
-            you want your vault to live next. On phones, browsers may discard site data to save space — keep a JSON export
+            you want your collection to live next. On phones, browsers may discard site data to save space — keep a JSON export
             you trust.
           </p>
           <a
