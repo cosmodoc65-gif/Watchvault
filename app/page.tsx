@@ -188,6 +188,8 @@ const gold = {
 
 const ADD_WATCH_STEP_COUNT = 4;
 
+type MainNavView = "dashboard" | "add-watch" | "collection";
+
 /** Horology-inspired mark: case + dial ring + twelve index + single hand — minimal, not illustrative. */
 function VaultMark({ className }: { className?: string }) {
   const gid = `wfMarkGold-${useId().replace(/:/g, "")}`;
@@ -672,6 +674,14 @@ export default function Page() {
   const [noWatchDataFound, setNoWatchDataFound] = useState(false);
   const [collectionPersistenceWarning, setCollectionPersistenceWarning] = useState<string | null>(null);
   const loadGenerationRef = useRef(0);
+  const [mainNavView, setMainNavView] = useState<MainNavView>("dashboard");
+
+  const goMainView = useCallback((v: MainNavView) => {
+    setMainNavView(v);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+    }
+  }, []);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -983,7 +993,7 @@ export default function Page() {
         notes: notes.trim() || undefined,
       };
 
-      const scrollTo = editingWatchId ? "add-watch" : "collection";
+      const savedFromEditSession = Boolean(editingWatchId);
 
       const saveNewPhotoToId = async (watchId: string): Promise<{ photoStorageKey?: string; photoUrl?: string }> => {
         const blob = pendingPhotoBlobRef.current;
@@ -1065,7 +1075,7 @@ export default function Page() {
 
       resetForm();
       requestAnimationFrame(() => {
-        document.getElementById(scrollTo)?.scrollIntoView({ behavior: "smooth" });
+        goMainView(savedFromEditSession ? "add-watch" : "collection");
       });
     },
     [
@@ -1090,6 +1100,7 @@ export default function Page() {
       watches,
       resetForm,
       addWatchStep,
+      goMainView,
     ],
   );
 
@@ -1140,10 +1151,10 @@ export default function Page() {
       }
 
       requestAnimationFrame(() => {
-        document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" });
+        goMainView("add-watch");
       });
     },
-    [],
+    [goMainView],
   );
 
   const onCancelEdit = useCallback(() => {
@@ -1209,11 +1220,12 @@ export default function Page() {
         setWatchStorageIssueDismissed(false);
         blockEmptyWatchListPersistRef.current = false;
         setCollectionPersistenceWarning(null);
+        goMainView("collection");
       } catch {
         setToastMessage("Import failed. Your collection was not changed.");
       }
     },
-    [watches, persistImportedPhotos],
+    [watches, persistImportedPhotos, goMainView],
   );
 
   const onExportBackup = useCallback(async () => {
@@ -1310,9 +1322,9 @@ export default function Page() {
   const onLoadDemo = useCallback(() => {
     setWatches((prev) => [...getDemoWatches(), ...prev]);
     requestAnimationFrame(() => {
-      document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" });
+      goMainView("collection");
     });
-  }, []);
+  }, [goMainView]);
 
   const onClearDemoWatches = useCallback(() => {
     setWatches((prev) => prev.filter((w) => !w.isDemo));
@@ -1346,32 +1358,63 @@ export default function Page() {
             </div>
           </div>
 
-          <nav className="flex max-w-[100vw] shrink-0 flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
+          <nav
+            className="flex max-w-[100vw] shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2"
+            aria-label="Main views"
+          >
+            <button
+              type="button"
+              onClick={() => goMainView("dashboard")}
+              className={classNames(
+                "min-h-[44px] rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px]",
+                mainNavView === "dashboard" ? gold.btnSmPrimary : gold.btnSmSecondary,
+              )}
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => goMainView("add-watch")}
+              className={classNames(
+                "min-h-[44px] rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px]",
+                mainNavView === "add-watch" ? gold.btnSmPrimary : gold.btnSmSecondary,
+              )}
+            >
+              Add Watch
+            </button>
+            <button
+              type="button"
+              onClick={() => goMainView("collection")}
+              className={classNames(
+                "min-h-[44px] rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px]",
+                mainNavView === "collection" ? gold.btnSmPrimary : gold.btnSmSecondary,
+              )}
+            >
+              Collection
+            </button>
             <a
               href={FEEDBACK_MAILTO}
               className={classNames("hidden min-h-[40px] items-center rounded-xl px-2.5 text-[13px] font-medium tracking-wide text-[hsla(44,24%,68%,0.95)] underline-offset-4 hover:text-white/90 sm:inline-flex")}
             >
               Feedback
             </a>
-            <button
-              type="button"
-              onClick={() => document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" })}
-              className={classNames("hidden min-h-[40px] sm:inline-flex", gold.btnSmSecondary)}
-            >
-              View collection
-            </button>
-            <button
-              type="button"
-              onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
-              className={classNames("min-h-[44px] shrink-0", gold.btnSmPrimary)}
-            >
-              Add Watch
-            </button>
           </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-4">
+        <input
+          ref={backupImportRef}
+          type="file"
+          accept="application/json,.json"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+          onChange={(e) => {
+            void onBackupFileChosen(e.target.files?.[0] ?? null);
+            e.target.value = "";
+          }}
+        />
         {watchesHydrated && indexedDbUnavailable && !collectionPersistenceWarning ? (
           <div className="pt-4" role="status">
             <div
@@ -1401,6 +1444,8 @@ export default function Page() {
             </div>
           </div>
         ) : null}
+        {mainNavView === "dashboard" ? (
+        <>
         <section className="pb-10 pt-14 sm:pt-[4.25rem]">
           <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
             <div>
@@ -1415,18 +1460,10 @@ export default function Page() {
               </p>
 
               <div className="mt-10 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
-                  className={gold.btnPrimary}
-                >
+                <button type="button" onClick={() => goMainView("add-watch")} className={gold.btnPrimary}>
                   Start your collection
                 </button>
-                <button
-                  type="button"
-                  onClick={() => document.getElementById("collection")?.scrollIntoView({ behavior: "smooth" })}
-                  className={gold.btnSecondary}
-                >
+                <button type="button" onClick={() => goMainView("collection")} className={gold.btnSecondary}>
                   View collection
                 </button>
               </div>
@@ -1526,18 +1563,6 @@ export default function Page() {
         </section>
 
         <section className="pb-4 pt-2">
-          <input
-            ref={backupImportRef}
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            tabIndex={-1}
-            aria-hidden
-            onChange={(e) => {
-              void onBackupFileChosen(e.target.files?.[0] ?? null);
-              e.target.value = "";
-            }}
-          />
           <div className={classNames("rounded-3xl p-5 sm:p-6", gold.frameLg)}>
             <p className="text-[11px] tracking-widest text-white/55">BACKUP &amp; EXPORT</p>
             <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/92">Protect your collection</h2>
@@ -1658,7 +1683,9 @@ export default function Page() {
             </p>
           </div>
         </section>
-
+        </>
+        ) : null}
+        {mainNavView === "add-watch" ? (
         <section
           id="add-watch"
           className={classNames("scroll-mt-24 rounded-3xl p-5 backdrop-blur sm:p-7", gold.frameLg)}
@@ -2049,7 +2076,8 @@ export default function Page() {
             </div>
           </form>
         </section>
-
+        ) : null}
+        {mainNavView === "collection" ? (
         <section id="collection" className="scroll-mt-24 pb-16 pt-12">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -2059,6 +2087,20 @@ export default function Page() {
             <div className="flex flex-wrap items-end justify-end gap-2 sm:items-center">
               <button
                 type="button"
+                onClick={() => void onExportBackup()}
+                className={classNames("min-h-[44px]", gold.btnSmSecondary)}
+              >
+                Export JSON
+              </button>
+              <button
+                type="button"
+                onClick={() => backupImportRef.current?.click()}
+                className={classNames("min-h-[44px]", gold.btnSmSecondary)}
+              >
+                Import JSON
+              </button>
+              <button
+                type="button"
                 onClick={() => void onExportCollectionPdf()}
                 className={classNames("min-h-[44px] rounded-2xl px-4 py-2", gold.btnSmSecondary)}
               >
@@ -2066,7 +2108,7 @@ export default function Page() {
               </button>
               <button
                 type="button"
-                onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => goMainView("add-watch")}
                 className={classNames("min-h-[44px] rounded-2xl px-4 py-2", gold.btnSmSecondary)}
               >
                 Add another
@@ -2096,7 +2138,7 @@ export default function Page() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
+                    onClick={() => goMainView("add-watch")}
                     className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnSecondary)}
                   >
                     Add a watch (new collection)
@@ -2141,7 +2183,7 @@ export default function Page() {
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
-                    onClick={() => document.getElementById("add-watch")?.scrollIntoView({ behavior: "smooth" })}
+                    onClick={() => goMainView("add-watch")}
                     className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnPrimary)}
                   >
                     Add first watch
@@ -2186,6 +2228,7 @@ export default function Page() {
             </div>
           )}
         </section>
+        ) : null}
 
         <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(42,24%,34%,0.58)] px-4 pb-16 pt-10">
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
