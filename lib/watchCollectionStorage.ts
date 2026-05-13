@@ -23,6 +23,12 @@ export type LoadWatchesFromStorageResult = LoadWatchesFromLocalStorageResult & {
   indexedDbUnavailable: boolean;
   /** True when there is genuinely no saved collection (not a parse error). */
   noWatchDataFound: boolean;
+  /**
+   * Startup safety: when true, the UI must not call `persistWatchCollection` with an empty array until the user
+   * adds a watch or imports a backup. Prevents wiping IndexedDB / canonical localStorage when the merge read was
+   * ambiguous (e.g. IndexedDB temporarily unavailable, parse/recovery paths, or load errors).
+   */
+  startupBlockEmptyPersist: boolean;
 };
 
 const emptyExtended = (): LoadWatchesFromStorageResult => ({
@@ -35,6 +41,7 @@ const emptyExtended = (): LoadWatchesFromStorageResult => ({
   migratedJsonToIndexedDb: false,
   indexedDbUnavailable: false,
   noWatchDataFound: false,
+  startupBlockEmptyPersist: true,
 });
 
 const SETTINGS_LOCALSTORAGE_KEYS_LOWER = new Set(
@@ -44,6 +51,25 @@ const SETTINGS_LOCALSTORAGE_KEYS_LOWER = new Set(
     WATCHVAULT_BACKUP_LAST_EXPORTED_AT_KEY,
   ].map((k) => k.toLowerCase()),
 );
+
+/**
+ * After merging every source, if we still have zero watches, only then may startup persist `[]` — and only when we are
+ * confident nothing was missed. IndexedDB-unavailable + zero merge is treated as unsafe: the collection might live in
+ * IDB only, or the probe failed transiently (Safari / private mode / storage pressure on deployed hosts).
+ */
+function deriveStartupBlockEmptyPersistForZeroMerge(opts: {
+  noWatchDataFound: boolean;
+  indexedDbUnavailable: boolean;
+  localStorageBlocksEmpty: boolean;
+  localStorageHadIssue: boolean;
+  likelyUnreadableWatchPayloadElsewhere: boolean;
+}): boolean {
+  if (opts.localStorageHadIssue || opts.localStorageBlocksEmpty) return true;
+  if (opts.indexedDbUnavailable) return true;
+  if (!opts.noWatchDataFound) return true;
+  if (opts.likelyUnreadableWatchPayloadElsewhere) return true;
+  return false;
+}
 
 /** Keys that are never treated as watch list JSON. */
 function isExcludedSettingsLocalStorageKey(key: string): boolean {
@@ -119,6 +145,42 @@ export function recoverWatchListsFromLocalStorageReadonly(): { key: string; watc
     /* ignore */
   }
   return out;
+}
+
+/**
+ * True when a heuristic watch-list key holds a non-empty JSON array (or `{ watches: [...] }`) that does not normalize
+ * to any valid `Watch`. In that situation we must not persist `[]` on startup — the raw payload may still be recoverable
+ * via backup repair or a future schema fix.
+ */
+function localStorageLikelyHasUnreadableWatchPayload(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (!key || !isLikelyWatchListLocalStorageKey(key)) continue;
+      let raw: string | null;
+      try {
+        raw = window.localStorage.getItem(key);
+      } catch {
+        continue;
+      }
+      if (!raw?.trim()) continue;
+      const t = raw.trim();
+      if (!t.startsWith("[") && !t.startsWith("{")) continue;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw) as unknown;
+      } catch {
+        continue;
+      }
+      const arr = extractArrayForWatchNormalize(parsed);
+      if (!Array.isArray(arr) || arr.length === 0) continue;
+      if (normalizeWatchList(arr).length === 0) return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
 }
 
 function auditLocalStorageRelevantKeys(): Record<string, { charCount: number } | { error: string }> {
@@ -222,6 +284,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
   const wideMerged = mergeWatchListsDedupeByIdPreferFirst(wideSlices.map((s) => s.watches));
   const mergedLocal = mergeWatchListsDedupeByIdPreferFirst([lsRead.watches, wideMerged]);
   const combined = mergeWatchListsDedupeByIdPreferFirst([idbWatches, mergedLocal]);
+  const unreadableWatchLikeLocalStorage = localStorageLikelyHasUnreadableWatchPayload();
 
   const recoveredPastPrimaryIssue =
     combined.length > 0 && (lsRead.issue !== null || lsRead.blockEmptyPersist) && lsRead.watches.length === 0;
@@ -252,9 +315,17 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
         migratedJsonToIndexedDb: false,
         indexedDbUnavailable,
         noWatchDataFound: false,
+        startupBlockEmptyPersist: true,
       };
     }
     const noWatchDataFound = !lsRead.issue && !lsRead.blockEmptyPersist;
+    const startupBlockEmptyPersist = deriveStartupBlockEmptyPersistForZeroMerge({
+      noWatchDataFound,
+      indexedDbUnavailable,
+      localStorageBlocksEmpty: lsRead.blockEmptyPersist,
+      localStorageHadIssue: lsRead.issue !== null,
+      likelyUnreadableWatchPayloadElsewhere: unreadableWatchLikeLocalStorage,
+    });
     if (process.env.NODE_ENV === "development") {
       console.info("[WatchVault storage]", {
         host: devLocationLabel(),
@@ -263,6 +334,10 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
         migrationPerformed: false,
         loadedFrom: null,
         note: "no_saved_collection_any_source",
+        startupBlockEmptyPersist,
+        indexedDbUnavailable,
+        noWatchDataFound,
+        unreadableWatchLikeLocalStorage,
       });
     }
     return {
@@ -275,6 +350,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
       migratedJsonToIndexedDb: false,
       indexedDbUnavailable,
       noWatchDataFound,
+      startupBlockEmptyPersist,
     };
   }
 
@@ -290,62 +366,38 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
   }
 
   const watches = combined;
-  const json = JSON.stringify(watches);
-  let migratedJsonToIndexedDb = false;
-
-  if (!indexedDbUnavailable && watches.length > 0) {
-    try {
-      await saveWatchCollectionJson(json);
-      migratedJsonToIndexedDb =
-        loadedFrom === "localStorage" || idbWatches.length === 0 || mergedLocal.length > idbWatches.length;
-    } catch {
-      /* IDB may be full or locked */
-    }
-  }
-
-  let canonicalLsMigration = false;
-  if (lsRead.sourceKey && lsRead.sourceKey !== WATCHES_STORAGE_KEY && lsRead.watches.length > 0) {
-    try {
-      window.localStorage.setItem(WATCHES_STORAGE_KEY, json);
-      canonicalLsMigration = true;
-    } catch {
-      /* keep legacy keys intact */
-    }
-  } else {
-    try {
-      window.localStorage.setItem(WATCHES_STORAGE_KEY, json);
-    } catch {
-      /* mirror / refresh failed */
-    }
-  }
-
-  const migrationPerformed = canonicalLsMigration || migratedJsonToIndexedDb || recoveredPastPrimaryIssue;
   const sourceKey =
     loadedFrom === "indexeddb" ? `indexeddb:${WATCH_COLLECTION_IDB_KEY}` : lsRead.sourceKey ?? WATCHES_STORAGE_KEY;
+
+  // Intentionally no IndexedDB / localStorage writes here. Writes run only after React has applied `watches` from this
+  // result and `watchesHydrated` is true, via `persistWatchCollection` — avoids empty-state races and duplicate concurrent
+  // load migrations (e.g. Strict Mode, slow IndexedDB on mobile, or Vercel cold-start + client navigation).
 
   if (process.env.NODE_ENV === "development") {
     console.info("[WatchVault storage]", {
       host: devLocationLabel(),
       storageKeyUsed: sourceKey,
       watchesLoaded: watches.length,
-      migrationPerformed,
-      migratedJsonToIndexedDb,
+      migrationPerformed: false,
+      migratedJsonToIndexedDb: false,
       loadedFrom,
       indexedDbUnavailable,
       recoveredPastPrimaryIssue,
+      note: "read_only_load_mirrors_deferred_to_persist_effect",
     });
   }
 
   return {
     watches,
     sourceKey,
-    migrationPerformed,
+    migrationPerformed: false,
     blockEmptyPersist: false,
     issue: null,
     loadedFrom,
-    migratedJsonToIndexedDb,
+    migratedJsonToIndexedDb: false,
     indexedDbUnavailable,
     noWatchDataFound: false,
+    startupBlockEmptyPersist: false,
   };
 }
 
@@ -358,7 +410,8 @@ export type PersistWatchCollectionOutcome = {
 
 /**
  * Persist collection: IndexedDB first, then best-effort mirror to canonical localStorage.
- * Does not remove legacy keys. Respects block-empty guard for wiped recoverable storage.
+ * Does not remove legacy keys. When `opts.blockEmptyWrite` is true and `watches` is empty, returns without writing so
+ * startup / ambiguous hydration cannot replace stored data with `[]`.
  */
 export async function persistWatchCollection(
   watches: Watch[],

@@ -643,7 +643,8 @@ export default function Page() {
   const backupImportRef = useRef<HTMLInputElement>(null);
   const [backupReminderDays, setBackupReminderDays] = useState<0 | 7 | 30>(0);
   const [lastBackupExportedAt, setLastBackupExportedAt] = useState<number | null>(null);
-  const blockEmptyWatchListPersistRef = useRef(false);
+  /** Default true: never persist `[]` until the initial storage merge completes and clears this (see `startupBlockEmptyPersist`). */
+  const blockEmptyWatchListPersistRef = useRef(true);
   const [watchStorageIssue, setWatchStorageIssue] = useState<WatchStorageLoadIssue | null>(null);
   const [watchStorageIssueDismissed, setWatchStorageIssueDismissed] = useState(false);
   const [indexedDbUnavailable, setIndexedDbUnavailable] = useState(false);
@@ -709,7 +710,7 @@ export default function Page() {
         setCollectionPersistenceWarning(null);
         setWatches(loaded.watches);
         setWatchStorageIssue(loaded.issue);
-        blockEmptyWatchListPersistRef.current = loaded.blockEmptyPersist;
+        blockEmptyWatchListPersistRef.current = loaded.startupBlockEmptyPersist;
         setIndexedDbUnavailable(loaded.indexedDbUnavailable);
         setNoWatchDataFound(loaded.noWatchDataFound);
       } catch {
@@ -773,6 +774,8 @@ export default function Page() {
   }, [watches.length]);
 
   const storageFullWarnedRef = useRef(false);
+  // Mirrors `watches` to IndexedDB + canonical localStorage only after hydration. Empty arrays are skipped while
+  // `blockEmptyWatchListPersistRef` is true so startup never clobbers recoverable legacy / IDB data with `[]`.
   useEffect(() => {
     if (typeof window === "undefined" || !watchesHydrated) return;
     if (watches.length === 0 && blockEmptyWatchListPersistRef.current) return;
