@@ -1336,12 +1336,11 @@ export default function Page() {
         <div
           className={classNames(
             "mx-auto max-w-6xl px-4 py-3.5 sm:py-4 md:py-5",
-            "flex min-w-0 flex-col gap-y-3.5 sm:gap-y-4",
-            "md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-4 md:gap-y-3",
+            "flex min-w-0 flex-col items-stretch gap-y-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-4 md:gap-y-3",
           )}
         >
-          <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 sm:gap-x-3 md:w-auto md:flex-1 md:flex-nowrap md:gap-x-3.5 lg:gap-4">
-            <div className="flex min-w-0 min-[360px]:flex-1 items-center gap-2.5 sm:gap-3.5 md:min-w-0 md:max-w-none">
+          <div className="flex min-w-0 w-full flex-col items-start gap-y-3 md:w-auto md:min-w-0 md:flex-1">
+            <div className="flex min-w-0 w-full items-center gap-2.5 sm:gap-3.5 md:min-w-0 md:flex-1">
               <div
                 className={classNames(
                   "relative flex h-[3.5rem] w-[3.5rem] shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-black/50 to-black/30 sm:h-16 sm:w-16 md:h-[4.25rem] md:w-[4.25rem]",
@@ -1350,7 +1349,7 @@ export default function Page() {
               >
                 <VaultMark className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p
                   className={classNames(
                     vaultSerif.className,
@@ -1364,16 +1363,25 @@ export default function Page() {
                 </p>
               </div>
             </div>
-
-            <nav
-              className="flex min-w-0 max-w-full shrink-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-2 sm:gap-x-2"
-              aria-label="Main views"
+            <p
+              className={classNames(
+                "w-full min-w-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,30%,78%,0.9)] sm:text-xs sm:tracking-[0.2em]",
+                "pl-[calc(3.5rem+0.625rem)] sm:pl-[calc(4rem+0.875rem)] md:hidden",
+              )}
             >
+              Private. Local. Yours.
+            </p>
+          </div>
+
+          <nav
+            className="flex w-full min-w-0 flex-wrap items-stretch gap-3 md:w-auto md:max-w-none md:flex-nowrap md:items-center md:justify-end md:gap-2"
+            aria-label="Main views"
+          >
             <button
               type="button"
               onClick={() => goMainView("dashboard")}
               className={classNames(
-                "min-h-[44px] rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px]",
+                "min-h-[44px] max-md:inline-flex max-md:flex-1 max-md:min-w-[110px] max-md:items-center max-md:justify-center rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px] md:inline-flex md:min-w-0 md:flex-none",
                 mainNavView === "dashboard" ? gold.btnSmPrimary : gold.btnSmSecondary,
               )}
             >
@@ -1383,7 +1391,7 @@ export default function Page() {
               type="button"
               onClick={() => goMainView("add-watch")}
               className={classNames(
-                "min-h-[44px] rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px]",
+                "min-h-[44px] max-md:inline-flex max-md:flex-1 max-md:min-w-[110px] max-md:items-center max-md:justify-center rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px] md:inline-flex md:min-w-0 md:flex-none",
                 mainNavView === "add-watch" ? gold.btnSmPrimary : gold.btnSmSecondary,
               )}
             >
@@ -1393,7 +1401,7 @@ export default function Page() {
               type="button"
               onClick={() => goMainView("collection")}
               className={classNames(
-                "min-h-[44px] rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px]",
+                "min-h-[44px] max-md:inline-flex max-md:flex-1 max-md:min-w-[110px] max-md:items-center max-md:justify-center rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px] md:inline-flex md:min-w-0 md:flex-none",
                 mainNavView === "collection" ? gold.btnSmPrimary : gold.btnSmSecondary,
               )}
             >
@@ -1401,21 +1409,13 @@ export default function Page() {
             </button>
             <a
               href={FEEDBACK_MAILTO}
-              className={classNames("hidden min-h-[40px] items-center rounded-xl px-2.5 text-[13px] font-medium tracking-wide text-[hsla(44,24%,68%,0.95)] underline-offset-4 hover:text-white/90 sm:inline-flex")}
+              className={classNames(
+                "hidden min-h-[40px] items-center rounded-xl px-2.5 text-[13px] font-medium tracking-wide text-[hsla(44,24%,68%,0.95)] underline-offset-4 hover:text-white/90 sm:inline-flex",
+              )}
             >
               Feedback
             </a>
           </nav>
-          </div>
-          <p
-            className={classNames(
-              "w-full min-w-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,30%,78%,0.9)] sm:text-xs sm:tracking-[0.2em]",
-              "pl-[calc(3.5rem+0.625rem)] sm:pl-[calc(4rem+0.875rem)] md:pl-0",
-              "md:hidden",
-            )}
-          >
-            Private. Local. Yours.
-          </p>
         </div>
       </header>
 
