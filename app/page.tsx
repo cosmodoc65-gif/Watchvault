@@ -34,6 +34,53 @@ const FEEDBACK_MAILTO =
   "&body=" +
   encodeURIComponent("Hi, I tested HoroLair and my feedback is…");
 
+const LOCAL_USAGE_COUNTERS_KEY = "horolair-local-usage-counters";
+const LOCAL_USAGE_COUNTER_KEYS = ["addWatchClicks", "watchesSaved", "imageUploads", "pdfExports", "wishlistAdds"] as const;
+type LocalUsageCounterKey = (typeof LOCAL_USAGE_COUNTER_KEYS)[number];
+type LocalUsageCounters = Record<LocalUsageCounterKey, number>;
+
+const EMPTY_LOCAL_USAGE_COUNTERS: LocalUsageCounters = {
+  addWatchClicks: 0,
+  watchesSaved: 0,
+  imageUploads: 0,
+  pdfExports: 0,
+  wishlistAdds: 0,
+};
+
+function normalizeLocalUsageCounters(value: unknown): LocalUsageCounters {
+  const source = value && typeof value === "object" ? (value as Partial<Record<LocalUsageCounterKey, unknown>>) : {};
+  return LOCAL_USAGE_COUNTER_KEYS.reduce<LocalUsageCounters>((acc, key) => {
+    const n = Number(source[key]);
+    acc[key] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    return acc;
+  }, { ...EMPTY_LOCAL_USAGE_COUNTERS });
+}
+
+function readLocalUsageCounters(): LocalUsageCounters {
+  if (typeof window === "undefined") return { ...EMPTY_LOCAL_USAGE_COUNTERS };
+  try {
+    return normalizeLocalUsageCounters(JSON.parse(window.localStorage.getItem(LOCAL_USAGE_COUNTERS_KEY) ?? "{}"));
+  } catch {
+    return { ...EMPTY_LOCAL_USAGE_COUNTERS };
+  }
+}
+
+function writeLocalUsageCounters(counters: LocalUsageCounters) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(LOCAL_USAGE_COUNTERS_KEY, JSON.stringify(counters));
+  } catch {
+    /* local debug counters are best-effort only */
+  }
+}
+
+function incrementLocalUsageCounter(key: LocalUsageCounterKey): LocalUsageCounters {
+  const next = readLocalUsageCounters();
+  next[key] += 1;
+  writeLocalUsageCounters(next);
+  return next;
+}
+
 function triggerTextDownload(filename: string, text: string, mime: string) {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -749,6 +796,8 @@ export default function Page() {
   const [collectionPersistenceWarning, setCollectionPersistenceWarning] = useState<string | null>(null);
   const loadGenerationRef = useRef(0);
   const [mainNavView, setMainNavView] = useState<MainNavView>("dashboard");
+  const [debugUsageEnabled, setDebugUsageEnabled] = useState(false);
+  const [localUsageCounters, setLocalUsageCounters] = useState<LocalUsageCounters>(EMPTY_LOCAL_USAGE_COUNTERS);
 
   const goMainView = useCallback((v: MainNavView) => {
     setMainNavView(v);
@@ -756,6 +805,21 @@ export default function Page() {
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
     }
   }, []);
+
+  const trackLocalUsage = useCallback((key: LocalUsageCounterKey) => {
+    setLocalUsageCounters(incrementLocalUsageCounter(key));
+  }, []);
+
+  const resetLocalUsageCounters = useCallback(() => {
+    const reset = { ...EMPTY_LOCAL_USAGE_COUNTERS };
+    writeLocalUsageCounters(reset);
+    setLocalUsageCounters(reset);
+  }, []);
+
+  const goAddWatchFromClick = useCallback(() => {
+    trackLocalUsage("addWatchClicks");
+    goMainView("add-watch");
+  }, [goMainView, trackLocalUsage]);
 
   // Form state
   const [brand, setBrand] = useState("");
@@ -844,6 +908,8 @@ export default function Page() {
     } catch {
       /* ignore */
     }
+    setDebugUsageEnabled(new URLSearchParams(window.location.search).get("debug") === "true");
+    setLocalUsageCounters(readLocalUsageCounters());
     return () => {
       loadGenerationRef.current += 1;
     };
@@ -1001,10 +1067,11 @@ export default function Page() {
         if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
         return URL.createObjectURL(blob);
       });
+      trackLocalUsage("imageUploads");
     } catch {
       setToastMessage("Could not process that image. Try another file or format.");
     }
-  }, []);
+  }, [trackLocalUsage]);
 
   const resetForm = useCallback(() => {
     setBrand("");
@@ -1147,6 +1214,7 @@ export default function Page() {
         setWatches((prev) => [watch, ...prev]);
       }
 
+      trackLocalUsage("watchesSaved");
       resetForm();
       requestAnimationFrame(() => {
         goMainView(savedFromEditSession ? "add-watch" : "collection");
@@ -1175,6 +1243,7 @@ export default function Page() {
       resetForm,
       addWatchStep,
       goMainView,
+      trackLocalUsage,
     ],
   );
 
@@ -1334,13 +1403,14 @@ export default function Page() {
         collectionCurrency,
         getPhotoSrc: (w) => resolvedPhotoUrls[w.id] ?? w.photoUrl,
       });
+      trackLocalUsage("pdfExports");
       setToastMessage("Collection PDF generated.");
     } catch (e) {
       setToastMessage(
         e instanceof Error ? e.message : "PDF export failed. Try again, or export a JSON backup instead.",
       );
     }
-  }, [watches, collectionCurrency, resolvedPhotoUrls]);
+  }, [watches, collectionCurrency, resolvedPhotoUrls, trackLocalUsage]);
 
   const backupIsDue = useMemo(() => {
     if (!isMounted) return false;
@@ -1463,7 +1533,7 @@ export default function Page() {
             </button>
             <button
               type="button"
-              onClick={() => goMainView("add-watch")}
+              onClick={goAddWatchFromClick}
               className={classNames(
                 "min-h-[44px] max-md:inline-flex max-md:flex-1 max-md:min-w-[110px] max-md:items-center max-md:justify-center rounded-xl px-2.5 text-[12px] font-semibold tracking-wide sm:px-3 sm:text-[13px] md:inline-flex md:min-w-0 md:flex-none",
                 mainNavView === "add-watch" ? gold.btnSmPrimary : gold.btnSmSecondary,
@@ -1551,7 +1621,7 @@ export default function Page() {
               </p>
 
               <div className="mt-10 flex flex-wrap gap-3">
-                <button type="button" onClick={() => goMainView("add-watch")} className={gold.btnPrimary}>
+                <button type="button" onClick={goAddWatchFromClick} className={gold.btnPrimary}>
                   Start your collection
                 </button>
                 <button type="button" onClick={() => goMainView("collection")} className={gold.btnSecondary}>
@@ -2154,7 +2224,7 @@ export default function Page() {
               </button>
               <button
                 type="button"
-                onClick={() => goMainView("add-watch")}
+                onClick={goAddWatchFromClick}
                 className={classNames("min-h-[44px] rounded-2xl px-4 py-2", gold.btnSmSecondary)}
               >
                 Add another
@@ -2184,7 +2254,7 @@ export default function Page() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => goMainView("add-watch")}
+                    onClick={goAddWatchFromClick}
                     className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnSecondary)}
                   >
                     Add a watch (new collection)
@@ -2229,7 +2299,7 @@ export default function Page() {
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                   <button
                     type="button"
-                    onClick={() => goMainView("add-watch")}
+                    onClick={goAddWatchFromClick}
                     className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnPrimary)}
                   >
                     Add first watch
@@ -2291,6 +2361,33 @@ export default function Page() {
           </a>
         </footer>
       </main>
+
+      {debugUsageEnabled ? (
+        <aside
+          className="fixed bottom-6 right-4 z-[120] w-[min(92vw,20rem)] rounded-2xl border-2 border-[hsla(44,42%,56%,0.92)] bg-[#0c0c0f]/95 p-4 text-white/88 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] backdrop-blur-md"
+          aria-label="Local usage debug panel"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,82%,0.86)]">
+                Debug usage
+              </p>
+              <p className="mt-1 text-[12px] leading-relaxed text-white/50">Stored locally in this browser only.</p>
+            </div>
+            <button type="button" onClick={resetLocalUsageCounters} className={classNames("shrink-0", gold.btnSmSecondary)}>
+              Reset
+            </button>
+          </div>
+          <dl className="mt-4 grid gap-2 text-sm">
+            {LOCAL_USAGE_COUNTER_KEYS.map((key) => (
+              <div key={key} className="flex items-center justify-between gap-4 rounded-xl bg-white/[0.04] px-3 py-2">
+                <dt className="font-medium text-white/68">{key}</dt>
+                <dd className="font-semibold tabular-nums text-white/94">{localUsageCounters[key]}</dd>
+              </div>
+            ))}
+          </dl>
+        </aside>
+      ) : null}
 
       {toastMessage ? (
         <div
