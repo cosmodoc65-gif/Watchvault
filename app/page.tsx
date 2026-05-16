@@ -162,28 +162,28 @@ function classNames(...values: Array<string | false | undefined | null>) {
  */
 const gold = {
   frame:
-    "border-2 border-[hsla(43,30%,58%,0.94)] bg-white/[0.035] shadow-[inset_0_1px_0_0_hsla(44,26%,70%,0.24),0_0_0_1px_rgba(0,0,0,0.55),0_12px_44px_-14px_hsla(42,26%,10%,0.46)]",
+    "border-2 border-[hsla(43,44%,64%,0.96)] bg-white/[0.04] shadow-[inset_0_1px_0_0_hsla(44,40%,76%,0.26),0_0_0_1px_rgba(0,0,0,0.52),0_12px_44px_-14px_hsla(42,36%,10%,0.46)]",
   frameLg:
-    "border-2 border-[hsla(42,28%,54%,0.92)] bg-white/[0.035] shadow-[inset_0_1px_0_0_hsla(43,22%,64%,0.2),0_0_0_1px_rgba(0,0,0,0.58),0_14px_52px_-16px_hsla(41,24%,9%,0.48)]",
+    "border-2 border-[hsla(42,42%,60%,0.94)] bg-white/[0.04] shadow-[inset_0_1px_0_0_hsla(43,36%,70%,0.22),0_0_0_1px_rgba(0,0,0,0.56),0_14px_52px_-16px_hsla(41,34%,9%,0.48)]",
   cardHover:
-    "transition duration-300 ease-out hover:border-[hsla(44,32%,62%,0.98)] hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_0_hsla(45,28%,72%,0.22),0_0_0_1px_hsla(42,22%,28%,0.42),0_22px_58px_-18px_hsla(40,26%,8%,0.5)] hover:-translate-y-0.5",
+    "transition duration-300 ease-out hover:border-[hsla(44,46%,68%,0.98)] hover:bg-white/[0.05] hover:shadow-[inset_0_1px_0_0_hsla(45,42%,76%,0.24),0_0_0_1px_hsla(42,34%,32%,0.44),0_22px_58px_-18px_hsla(40,36%,8%,0.5)] hover:-translate-y-0.5",
   focus:
-    "focus:border-[hsla(44,30%,60%,0.96)] focus:ring-2 focus:ring-[hsla(43,28%,40%,0.48)] focus:ring-offset-2 focus:ring-offset-[#070708]",
+    "focus:border-[hsla(44,46%,66%,0.98)] focus:ring-2 focus:ring-[hsla(43,42%,46%,0.5)] focus:ring-offset-2 focus:ring-offset-[#070708]",
   input:
-    "rounded-2xl border-2 border-[hsla(42,26%,48%,0.9)] bg-black/45 px-4 py-3 text-sm text-white/92 outline-none placeholder:text-white/42",
-  tag: "rounded-lg border-2 border-[hsla(42,24%,50%,0.88)] bg-black/38 px-2.5 py-1.5 text-[13px] font-medium leading-snug text-white/88 shadow-[inset_0_1px_0_0_hsla(44,20%,58%,0.14)]",
+    "rounded-2xl border-2 border-[hsla(42,40%,54%,0.92)] bg-black/45 px-4 py-3 text-sm text-white/92 outline-none placeholder:text-white/42",
+  tag: "rounded-lg border-2 border-[hsla(42,38%,56%,0.9)] bg-black/38 px-2.5 py-1.5 text-[13px] font-medium leading-snug text-white/90 shadow-[inset_0_1px_0_0_hsla(44,34%,64%,0.16)]",
   statCell:
-    "rounded-xl border-2 border-[hsla(42,24%,48%,0.88)] bg-black/42 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(43,20%,56%,0.14),0_6px_22px_-14px_hsla(42,24%,8%,0.44)]",
+    "rounded-xl border-2 border-[hsla(42,38%,54%,0.9)] bg-black/42 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(43,34%,62%,0.16),0_6px_22px_-14px_hsla(42,34%,8%,0.44)]",
   btnPrimary:
-    "rounded-2xl border-2 border-[hsla(44,34%,58%,0.96)] bg-gradient-to-b from-[hsla(42,22%,20%,0.97)] via-[hsla(40,18%,13%,0.95)] to-[hsla(38,16%,9%,0.94)] px-5 py-3 text-sm font-semibold tracking-wide text-[hsla(46,36%,96%,0.99)] shadow-[inset_0_1px_0_0_hsla(44,26%,66%,0.34)] transition hover:border-[hsla(45,36%,64%,0.99)] hover:shadow-[inset_0_1px_0_0_hsla(46,28%,74%,0.2),0_0_36px_-12px_hsla(42,30%,18%,0.42)]",
+    "rounded-2xl border-2 border-[hsla(44,48%,64%,0.98)] bg-gradient-to-b from-[hsla(42,34%,22%,0.97)] via-[hsla(40,29%,14%,0.95)] to-[hsla(38,26%,9%,0.94)] px-5 py-3 text-sm font-semibold tracking-wide text-[hsla(46,50%,97%,0.99)] shadow-[inset_0_1px_0_0_hsla(44,40%,72%,0.36)] transition hover:border-[hsla(45,50%,70%,0.99)] hover:shadow-[inset_0_1px_0_0_hsla(46,42%,78%,0.22),0_0_36px_-12px_hsla(42,44%,22%,0.46)]",
   btnSecondary:
-    "rounded-2xl border-2 border-[hsla(42,26%,50%,0.9)] bg-black/48 px-5 py-3 text-sm font-semibold tracking-wide text-white/92 shadow-[inset_0_1px_0_0_hsla(43,18%,56%,0.15)] transition hover:border-[hsla(44,30%,58%,0.96)] hover:bg-black/56 hover:text-white",
+    "rounded-2xl border-2 border-[hsla(42,40%,56%,0.92)] bg-black/48 px-5 py-3 text-sm font-semibold tracking-wide text-white/93 shadow-[inset_0_1px_0_0_hsla(43,32%,62%,0.17)] transition hover:border-[hsla(44,44%,64%,0.97)] hover:bg-black/56 hover:text-white",
   btnSmPrimary:
-    "rounded-xl border-2 border-[hsla(44,30%,56%,0.95)] bg-gradient-to-b from-[hsla(42,20%,17%,0.96)] to-[hsla(38,15%,10%,0.94)] px-3 py-2 text-xs font-semibold tracking-wide text-[hsla(46,34%,95%,0.99)] shadow-[inset_0_1px_0_0_hsla(44,22%,60%,0.3)] transition hover:border-[hsla(45,34%,62%,0.98)] hover:shadow-[0_0_28px_-10px_hsla(42,28%,16%,0.4)]",
+    "rounded-xl border-2 border-[hsla(44,46%,62%,0.97)] bg-gradient-to-b from-[hsla(42,32%,19%,0.96)] to-[hsla(38,25%,10%,0.94)] px-3 py-2 text-xs font-semibold tracking-wide text-[hsla(46,48%,96%,0.99)] shadow-[inset_0_1px_0_0_hsla(44,36%,68%,0.32)] transition hover:border-[hsla(45,50%,68%,0.99)] hover:shadow-[0_0_28px_-10px_hsla(42,42%,20%,0.42)]",
   btnSmSecondary:
-    "rounded-xl border-2 border-[hsla(42,22%,48%,0.88)] bg-black/52 px-3 py-2 text-xs font-medium tracking-wide text-white/90 transition hover:border-[hsla(44,28%,56%,0.95)] hover:bg-black/60",
+    "rounded-xl border-2 border-[hsla(42,38%,54%,0.9)] bg-black/52 px-3 py-2 text-xs font-medium tracking-wide text-white/92 transition hover:border-[hsla(44,44%,62%,0.96)] hover:bg-black/60",
   pill:
-    "rounded-full border-2 border-[hsla(42,26%,52%,0.9)] bg-black/40 px-3 py-1.5 text-[12px] font-semibold tracking-widest text-white/86 shadow-[inset_0_1px_0_0_hsla(44,18%,60%,0.15)]",
+    "rounded-full border-2 border-[hsla(42,42%,58%,0.92)] bg-black/40 px-3 py-1.5 text-[12px] font-semibold tracking-widest text-white/88 shadow-[inset_0_1px_0_0_hsla(44,34%,66%,0.17)]",
 };
 
 const ADD_WATCH_STEP_COUNT = 4;
@@ -197,9 +197,9 @@ function VaultMark({ className }: { className?: string }) {
     <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden>
       <defs>
         <linearGradient id={gid} x1="7" y1="6" x2="35" y2="36" gradientUnits="userSpaceOnUse">
-          <stop stopColor="hsl(46, 36%, 92%)" />
-          <stop offset="0.45" stopColor="hsl(43, 26%, 72%)" />
-          <stop offset="1" stopColor="hsl(40, 24%, 52%)" />
+          <stop stopColor="hsl(46, 46%, 92%)" />
+          <stop offset="0.45" stopColor="hsl(43, 36%, 72%)" />
+          <stop offset="1" stopColor="hsl(40, 34%, 52%)" />
         </linearGradient>
       </defs>
       <rect x="6.25" y="6.25" width="27.5" height="27.5" rx="6.25" stroke={`url(#${gid})`} strokeWidth="1.2" />
@@ -303,12 +303,12 @@ function CurrencyDropdown({
         onClick={() => setOpen((o) => !o)}
         onKeyDown={onKeyDownBtn}
         className={classNames(
-          "flex w-full min-h-[44px] cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[hsla(42,26%,48%,0.9)] bg-black/45 px-3 py-2.5 text-left text-sm text-white/92 outline-none transition",
-          "hover:border-[hsla(44,30%,58%,0.96)] focus-visible:border-[hsla(44,30%,58%,0.96)] focus-visible:ring-2 focus-visible:ring-[hsla(43,28%,40%,0.48)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070708]",
+          "flex w-full min-h-[44px] cursor-pointer items-center justify-between gap-2 rounded-xl border-2 border-[hsla(42,36%,48%,0.9)] bg-black/45 px-3 py-2.5 text-left text-sm text-white/92 outline-none transition",
+          "hover:border-[hsla(44,40%,58%,0.96)] focus-visible:border-[hsla(44,40%,58%,0.96)] focus-visible:ring-2 focus-visible:ring-[hsla(43,38%,40%,0.48)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#070708]",
         )}
       >
         <span className="truncate">{current}</span>
-        <span className="shrink-0 text-[11px] text-[hsla(44,22%,62%,0.9)]" aria-hidden>
+        <span className="shrink-0 text-[11px] text-[hsla(44,32%,62%,0.9)]" aria-hidden>
           {open ? "▴" : "▾"}
         </span>
       </button>
@@ -321,7 +321,7 @@ function CurrencyDropdown({
           onKeyDown={onKeyDownList}
           ref={listRef}
           className={classNames(
-            "absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-2 border-[hsla(44,30%,58%,0.95)] bg-[#0a0a0c] py-1 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] outline-none",
+            "absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-xl border-2 border-[hsla(44,40%,58%,0.95)] bg-[#0a0a0c] py-1 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] outline-none",
           )}
         >
           {CURRENCIES.map((c, i) => (
@@ -333,7 +333,7 @@ function CurrencyDropdown({
                 className={classNames(
                   "flex w-full min-h-[44px] items-center px-3 py-2.5 text-left text-sm transition",
                   i === highlight ? "bg-white/[0.08] text-white" : "text-white/88",
-                  c.code === value ? "font-semibold text-[hsla(46,38%,94%,0.98)]" : "font-normal",
+                  c.code === value ? "font-semibold text-[hsla(46,48%,94%,0.98)]" : "font-normal",
                   "hover:bg-white/[0.06] hover:text-white",
                 )}
                 onMouseEnter={() => setHighlight(i)}
@@ -361,10 +361,84 @@ function Placeholder() {
         <div
           className={classNames(
             "mx-auto mb-2 h-10 w-10 rounded-full bg-black/30",
-            "border-2 border-[hsla(42,24%,50%,0.85)] shadow-[inset_0_1px_0_0_hsla(44,18%,58%,0.14)]",
+            "border-2 border-[hsla(42,34%,50%,0.85)] shadow-[inset_0_1px_0_0_hsla(44,28%,58%,0.14)]",
           )}
         />
         <p className="text-[13px] font-medium tracking-wide text-white/62">No photo</p>
+      </div>
+    </div>
+  );
+}
+
+const collectorHeroCards = [
+  { title: "Dress", detail: "Moonphase", accent: "from-[hsla(44,48%,64%,0.24)]" },
+  { title: "Sport", detail: "Chronograph", accent: "from-[hsla(42,44%,58%,0.2)]" },
+  { title: "Diver", detail: "Daily rotation", accent: "from-[hsla(40,40%,52%,0.18)]" },
+] as const;
+
+function CollectorHeroCard({ title, detail, accent }: (typeof collectorHeroCards)[number]) {
+  return (
+    <div
+      className={classNames(
+        "relative min-h-[8.5rem] overflow-hidden rounded-2xl p-3 sm:min-h-[10rem] sm:p-4",
+        gold.frame,
+        `bg-gradient-to-br ${accent} via-white/[0.035] to-black/30`,
+      )}
+    >
+      <div className="absolute inset-x-4 top-4 h-px bg-gradient-to-r from-transparent via-[hsla(44,44%,72%,0.45)] to-transparent" />
+      <div className="relative flex h-full flex-col justify-between">
+        <div className="flex justify-center pt-3 sm:pt-4">
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-[hsla(44,46%,68%,0.86)] bg-black/36 shadow-[inset_0_1px_0_0_hsla(45,40%,76%,0.22),0_14px_28px_-18px_hsla(42,46%,24%,0.55)] sm:h-16 sm:w-16">
+            <div className="h-10 w-10 rounded-full border border-[hsla(44,40%,68%,0.44)] bg-[radial-gradient(circle_at_50%_38%,hsla(44,40%,70%,0.18),transparent_42%),linear-gradient(145deg,rgba(255,255,255,0.05),rgba(0,0,0,0.2))] sm:h-12 sm:w-12" />
+            <span className="absolute top-2 h-1.5 w-px rounded-full bg-[hsla(44,52%,76%,0.85)]" />
+            <span className="absolute h-px w-5 origin-left rotate-[28deg] rounded-full bg-[hsla(44,52%,76%,0.78)]" />
+            <span className="absolute h-4 w-px origin-bottom -rotate-[36deg] rounded-full bg-[hsla(44,44%,68%,0.72)]" />
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,74%,0.86)]">{title}</p>
+          <p className="mt-1 truncate text-[13px] font-medium text-white/78">{detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollectorHeroPanel() {
+  return (
+    <div className={classNames("relative overflow-hidden rounded-3xl p-4 sm:p-5", gold.frameLg)}>
+      <div className="absolute inset-0 bg-[radial-gradient(520px_260px_at_28%_18%,hsla(44,44%,58%,0.22),transparent_62%),radial-gradient(420px_240px_at_78%_85%,hsla(42,34%,44%,0.14),transparent_68%)]" />
+      <div className="relative">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[hsla(44,46%,76%,0.88)]">
+              Private watch vault
+            </p>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-white/94 sm:text-2xl">
+              Catalogue, track and enjoy your collection.
+            </h2>
+          </div>
+          <p className="max-w-[14rem] text-[12px] leading-relaxed text-white/54 sm:text-right">
+            A calm local-first space for watches, photos, values and notes.
+          </p>
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2.5 sm:gap-3">
+          {collectorHeroCards.map((card) => (
+            <CollectorHeroCard key={card.title} {...card} />
+          ))}
+        </div>
+
+        <div className="mt-5 grid grid-cols-3 gap-2 text-center">
+          {["Local", "Private", "Exportable"].map((label) => (
+            <div
+              key={label}
+              className="rounded-xl border border-[hsla(42,40%,58%,0.42)] bg-black/24 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,44%,82%,0.86)]"
+            >
+              {label}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -432,7 +506,7 @@ function WatchCard({
             <p className="truncate text-[0.9375rem] font-semibold tracking-wide text-white/93">{watch.brand}</p>
             <p className="mt-0.5 truncate text-[0.9375rem] font-medium text-white/76">{watch.model}</p>
           </div>
-          <span className="hidden shrink-0 rounded-full border-2 border-[hsla(44,30%,56%,0.92)] bg-[hsla(40,14%,8%,0.82)] px-2 py-1 text-[11px] font-medium tracking-widest text-[hsla(46,36%,94%,0.97)] shadow-[inset_0_1px_0_0_hsla(44,22%,58%,0.22)] sm:inline">
+          <span className="hidden shrink-0 rounded-full border-2 border-[hsla(44,40%,56%,0.92)] bg-[hsla(40,24%,8%,0.82)] px-2 py-1 text-[11px] font-medium tracking-widest text-[hsla(46,46%,94%,0.97)] shadow-[inset_0_1px_0_0_hsla(44,32%,58%,0.22)] sm:inline">
             CATALOGUED
           </span>
         </div>
@@ -1332,7 +1406,7 @@ export default function Page() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b-2 border-[hsla(42,28%,52%,0.95)] bg-black/50 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b-2 border-[hsla(42,38%,52%,0.95)] bg-black/50 backdrop-blur-md">
         <div
           className={classNames(
             "mx-auto max-w-6xl px-4 py-3.5 sm:py-4 md:py-5",
@@ -1353,19 +1427,19 @@ export default function Page() {
                 <p
                   className={classNames(
                     vaultSerif.className,
-                    "bg-gradient-to-b from-[hsla(46,40%,99%,0.99)] via-[hsla(44,32%,90%,0.98)] to-[hsla(42,30%,68%,0.97)] bg-clip-text text-[1.35rem] font-bold leading-[1.05] tracking-[0.03em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[380px]:text-[1.55rem] min-[400px]:text-[1.75rem] sm:text-[2.1rem] sm:tracking-[0.05em] md:text-[2.42rem] md:tracking-[0.055em]",
+                    "bg-gradient-to-b from-[hsla(46,50%,99%,0.99)] via-[hsla(44,42%,90%,0.98)] to-[hsla(42,40%,68%,0.97)] bg-clip-text text-[1.35rem] font-bold leading-[1.05] tracking-[0.03em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[380px]:text-[1.55rem] min-[400px]:text-[1.75rem] sm:text-[2.1rem] sm:tracking-[0.05em] md:text-[2.42rem] md:tracking-[0.055em]",
                   )}
                 >
                   Wristfolio
                 </p>
-                <p className="mt-1 hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,28%,76%,0.88)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em] md:block">
+                <p className="mt-1 hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,38%,76%,0.88)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em] md:block">
                   Private. Local. Yours.
                 </p>
               </div>
             </div>
             <p
               className={classNames(
-                "w-full min-w-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,30%,78%,0.9)] sm:text-xs sm:tracking-[0.2em]",
+                "w-full min-w-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,40%,78%,0.9)] sm:text-xs sm:tracking-[0.2em]",
                 "pl-[calc(3.5rem+0.625rem)] sm:pl-[calc(4rem+0.875rem)] md:hidden",
               )}
             >
@@ -1410,7 +1484,7 @@ export default function Page() {
             <a
               href={FEEDBACK_MAILTO}
               className={classNames(
-                "hidden min-h-[40px] items-center rounded-xl px-2.5 text-[13px] font-medium tracking-wide text-[hsla(44,24%,68%,0.95)] underline-offset-4 hover:text-white/90 sm:inline-flex",
+                "hidden min-h-[40px] items-center rounded-xl px-2.5 text-[13px] font-medium tracking-wide text-[hsla(44,34%,68%,0.95)] underline-offset-4 hover:text-white/90 sm:inline-flex",
               )}
             >
               Feedback
@@ -1499,7 +1573,7 @@ export default function Page() {
               </div>
 
               <div className={classNames("mt-8 grid gap-3.5 rounded-2xl p-4 sm:max-w-xl", gold.frameLg)}>
-                <div className="border-b border-[hsla(42,22%,38%,0.55)] pb-3.5">
+                <div className="border-b border-[hsla(42,32%,38%,0.55)] pb-3.5">
                   <p className="text-[12px] font-semibold tracking-widest text-white/58">COLLECTION CURRENCY</p>
                   <p className="mt-1.5 text-[11px] font-normal leading-relaxed text-white/48">
                     Display and entry currency. Values are not converted when you switch.
@@ -1530,52 +1604,7 @@ export default function Page() {
               </div>
             </div>
 
-            <div className={classNames("relative overflow-hidden rounded-3xl p-5", gold.frameLg)}>
-              <div className="absolute inset-0 bg-[radial-gradient(650px_350px_at_30%_20%,hsla(44,26%,52%,0.2),transparent_60%)]" />
-              <div className="relative">
-                <p className="text-[13px] font-semibold tracking-widest text-white/62">PREVIEW</p>
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className={classNames("aspect-[4/3] overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
-                    {photoPreviewUrl ? (
-                      <img
-                        src={photoPreviewUrl}
-                        alt="Selected watch preview"
-                        draggable={false}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <Placeholder />
-                    )}
-                  </div>
-                  <div className={classNames("rounded-2xl bg-white/[0.04] p-4 sm:p-5", gold.frame)}>
-                    <p className="text-[12px] font-semibold tracking-widest text-white/62">DETAILS</p>
-                    <p className="mt-3.5 truncate text-[0.9375rem] font-semibold text-white/92">{brand || "Brand"}</p>
-                    <p className="truncate text-[13px] font-medium text-white/72">{model || "Model"}</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <span className={gold.tag}>Ref. {reference || "—"}</span>
-                      <span className={gold.tag}>Year {year || "—"}</span>
-                      <span className={gold.tag}>Serial {serialNumber.trim() || "—"}</span>
-                      <span className={gold.tag}>Purchase {previewValueDisplay(purchasePriceStr, collectionCurrency)}</span>
-                      <span className={gold.tag}>Est. {previewValueDisplay(estimatedValue, collectionCurrency)}</span>
-                      {condition ? (
-                        <span className={gold.tag}>{CONDITION_LABELS[condition]}</span>
-                      ) : (
-                        <span className={gold.tag}>Condition —</span>
-                      )}
-                      {boxPapers ? (
-                        <span className={gold.tag}>{BOXPAPERS_LABELS[boxPapers]}</span>
-                      ) : (
-                        <span className={gold.tag}>Box / papers —</span>
-                      )}
-                    </div>
-                    <p className="mt-3.5 line-clamp-2 text-[13px] font-normal leading-relaxed text-white/62">
-                      {serviceHistory.trim() ? serviceHistory : "Service history…"}
-                    </p>
-                    <p className="mt-2 line-clamp-2 text-[13px] font-normal leading-relaxed text-white/62">{notes || "Notes…"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CollectorHeroPanel />
           </div>
         </section>
 
@@ -1606,7 +1635,7 @@ export default function Page() {
               </div>
             ) : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-center">
-              <div className="rounded-2xl border-2 border-[hsla(42,24%,46%,0.82)] bg-black/35 px-4 py-3">
+              <div className="rounded-2xl border-2 border-[hsla(42,34%,46%,0.82)] bg-black/35 px-4 py-3">
                 <p className="text-[11px] tracking-widest text-white/50">BACKUP REMINDER</p>
                 <p className="mt-1 text-sm text-white/70">Last export: {backupLastLabel}</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-white/45">
@@ -1682,11 +1711,11 @@ export default function Page() {
             {showSubtleNeverExportedBackupCue ? (
               <div
                 className={classNames(
-                  "mt-3 max-w-2xl rounded-2xl border border-[hsla(42,26%,44%,0.58)] bg-black/30 px-3 py-2.5 text-[12px] font-normal leading-relaxed text-[hsla(44,28%,80%,0.88)]",
+                  "mt-3 max-w-2xl rounded-2xl border border-[hsla(42,36%,44%,0.58)] bg-black/30 px-3 py-2.5 text-[12px] font-normal leading-relaxed text-[hsla(44,38%,80%,0.88)]",
                   gold.frame,
                 )}
               >
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[hsla(44,22%,58%,0.78)]">Backup</p>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[hsla(44,32%,58%,0.78)]">Backup</p>
                 <p className="mt-1">
                   Backup recommended: export your collection to avoid losing local data. Mobile browsers may clear site
                   storage without warning.
@@ -1737,8 +1766,8 @@ export default function Page() {
                   className={classNames(
                     "min-h-[40px] rounded-full border-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition sm:px-4",
                     active
-                      ? "border-[hsla(44,32%,58%,0.95)] bg-white/[0.08] text-[hsla(46,36%,94%,0.98)]"
-                      : "border-[hsla(42,22%,38%,0.55)] bg-black/25 text-white/55 hover:border-[hsla(44,26%,48%,0.75)] hover:text-white/75",
+                      ? "border-[hsla(44,42%,58%,0.95)] bg-white/[0.08] text-[hsla(46,46%,94%,0.98)]"
+                      : "border-[hsla(42,32%,38%,0.55)] bg-black/25 text-white/55 hover:border-[hsla(44,36%,48%,0.75)] hover:text-white/75",
                   )}
                 >
                   {n}. {label}
@@ -1775,14 +1804,14 @@ export default function Page() {
                       <Placeholder />
                     )}
                   </div>
-                  <div className="border-t-2 border-[hsla(42,24%,40%,0.75)] p-4 sm:p-5">
+                  <div className="border-t-2 border-[hsla(42,34%,40%,0.75)] p-4 sm:p-5">
                     <label className="grid gap-2.5">
                       <span className="text-[13px] font-medium tracking-wide text-white/65">Upload image</span>
                       <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => void onPickPhoto(e.target.files?.[0] ?? null)}
-                        className="block w-full min-h-[48px] text-[13px] font-medium text-white/80 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(42,26%,48%,0.9)] file:bg-black/45 file:px-3 file:py-2.5 file:text-[13px] file:font-medium file:text-white/90 hover:file:border-[hsla(44,30%,58%,0.96)] hover:file:bg-black/55"
+                        className="block w-full min-h-[48px] text-[13px] font-medium text-white/80 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(42,36%,48%,0.9)] file:bg-black/45 file:px-3 file:py-2.5 file:text-[13px] file:font-medium file:text-white/90 hover:file:border-[hsla(44,40%,58%,0.96)] hover:file:bg-black/55"
                       />
                     </label>
                     <div className="mt-4">
@@ -1790,7 +1819,7 @@ export default function Page() {
                         type="button"
                         disabled
                         aria-disabled="true"
-                        className="w-full cursor-not-allowed rounded-xl border-2 border-dashed border-[hsla(42,22%,38%,0.65)] bg-black/30 px-4 py-3 text-left text-[13px] font-medium text-white/45"
+                        className="w-full cursor-not-allowed rounded-xl border-2 border-dashed border-[hsla(42,32%,38%,0.65)] bg-black/30 px-4 py-3 text-left text-[13px] font-medium text-white/45"
                       >
                         Identify watch from photo — coming soon
                       </button>
@@ -2059,7 +2088,7 @@ export default function Page() {
               </div>
             ) : null}
 
-            <div className="flex flex-col-reverse gap-3 border-t border-[hsla(42,22%,32%,0.45)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col-reverse gap-3 border-t border-[hsla(42,32%,32%,0.45)] pt-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -2221,9 +2250,9 @@ export default function Page() {
           ) : (
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {watches.some((w) => w.isDemo) ? (
-                <div className="col-span-full flex flex-col gap-3 rounded-2xl border-2 border-dashed border-[hsla(42,26%,48%,0.58)] bg-black/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="col-span-full flex flex-col gap-3 rounded-2xl border-2 border-dashed border-[hsla(42,36%,48%,0.58)] bg-black/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-white/70">
-                    <span className="font-semibold text-[hsla(38,34%,88%,0.95)]">Demo samples</span> in your list — remove
+                    <span className="font-semibold text-[hsla(38,44%,88%,0.95)]">Demo samples</span> in your list — remove
                     them anytime without touching your real watches.
                   </p>
                   <button type="button" onClick={onClearDemoWatches} className={classNames("min-h-[44px] shrink-0", gold.btnSmSecondary)}>
@@ -2247,7 +2276,7 @@ export default function Page() {
         </section>
         ) : null}
 
-        <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(42,24%,34%,0.58)] px-4 pb-16 pt-10">
+        <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(42,34%,34%,0.58)] px-4 pb-16 pt-10">
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
             Wristfolio stores your collection locally on this device and browser — private, with no account or cloud
             database. Watches added here do not appear on other devices by themselves; export a backup and import it where
@@ -2256,7 +2285,7 @@ export default function Page() {
           </p>
           <a
             href={FEEDBACK_MAILTO}
-            className="mt-4 inline-flex min-h-[44px] items-center text-[0.9375rem] font-medium tracking-wide text-[hsla(44,26%,72%,0.96)] underline decoration-[hsla(42,26%,46%,0.78)] underline-offset-4 hover:text-white/90"
+            className="mt-4 inline-flex min-h-[44px] items-center text-[0.9375rem] font-medium tracking-wide text-[hsla(44,36%,72%,0.96)] underline decoration-[hsla(42,36%,46%,0.78)] underline-offset-4 hover:text-white/90"
           >
             Beta feedback
           </a>
@@ -2265,7 +2294,7 @@ export default function Page() {
 
       {toastMessage ? (
         <div
-          className="fixed bottom-6 left-1/2 z-[130] w-[min(92vw,28rem)] -translate-x-1/2 rounded-2xl border-2 border-[hsla(44,32%,56%,0.92)] bg-[#0c0c0f]/95 px-4 py-3 text-center text-[0.9375rem] font-medium text-white/90 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] backdrop-blur-md"
+          className="fixed bottom-6 left-1/2 z-[130] w-[min(92vw,28rem)] -translate-x-1/2 rounded-2xl border-2 border-[hsla(44,42%,56%,0.92)] bg-[#0c0c0f]/95 px-4 py-3 text-center text-[0.9375rem] font-medium text-white/90 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] backdrop-blur-md"
           role="status"
         >
           {toastMessage}
