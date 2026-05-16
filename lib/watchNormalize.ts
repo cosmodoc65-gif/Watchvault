@@ -180,7 +180,7 @@ function readNonEmptyLocalStorageValue(key: string): string | null {
 
 function logWristfolioStorageDev(info: Record<string, unknown>) {
   if (process.env.NODE_ENV === "development") {
-    console.info("[Wristfolio storage]", info);
+    console.info("[HoroLair storage]", info);
   }
 }
 

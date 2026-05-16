@@ -30,9 +30,9 @@ import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/wrist
 
 const FEEDBACK_MAILTO =
   "mailto:DrASchuter@proton.me?subject=" +
-  encodeURIComponent("Wristfolio beta feedback") +
+  encodeURIComponent("HoroLair beta feedback") +
   "&body=" +
-  encodeURIComponent("Hi, I tested Wristfolio and my feedback is…");
+  encodeURIComponent("Hi, I tested HoroLair and my feedback is…");
 
 function triggerTextDownload(filename: string, text: string, mime: string) {
   const blob = new Blob([text], { type: mime });
@@ -1305,7 +1305,7 @@ export default function Page() {
   const onExportBackup = useCallback(async () => {
     try {
       const json = await buildBackupJsonString(watches, collectionCurrency);
-      triggerTextDownload(`wristfolio-backup-${Date.now()}.json`, json, "application/json");
+      triggerTextDownload(`horolair-backup-${Date.now()}.json`, json, "application/json");
       const now = Date.now();
       setLastBackupExportedAt(now);
       try {
@@ -1320,7 +1320,7 @@ export default function Page() {
 
   const onExportCsv = useCallback(() => {
     const csv = buildCollectionCsv(watches, collectionCurrency);
-    triggerTextDownload(`wristfolio-export-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
+    triggerTextDownload(`horolair-export-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
   }, [watches, collectionCurrency]);
 
   const onExportCollectionPdf = useCallback(async () => {
@@ -1384,7 +1384,7 @@ export default function Page() {
       const text = await file.text();
       const parsed = parseBackupJson(text);
       if (!parsed) {
-        setToastMessage("That file is not a valid Wristfolio backup.");
+        setToastMessage("That file is not a valid HoroLair backup.");
         return;
       }
       setImportPreview(parsed);
@@ -1430,7 +1430,7 @@ export default function Page() {
                     "bg-gradient-to-b from-[hsla(46,50%,99%,0.99)] via-[hsla(44,42%,90%,0.98)] to-[hsla(42,40%,68%,0.97)] bg-clip-text text-[1.35rem] font-bold leading-[1.05] tracking-[0.03em] text-transparent drop-shadow-[0_1px_14px_rgba(0,0,0,0.55)] min-[380px]:text-[1.55rem] min-[400px]:text-[1.75rem] sm:text-[2.1rem] sm:tracking-[0.05em] md:text-[2.42rem] md:tracking-[0.055em]",
                   )}
                 >
-                  Wristfolio
+                  HoroLair
                 </p>
                 <p className="mt-1 hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,38%,76%,0.88)] sm:mt-1.5 sm:text-xs sm:tracking-[0.2em] md:block">
                   Private. Local. Yours.
@@ -1516,7 +1516,7 @@ export default function Page() {
             >
               <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Storage</p>
               <p className="mt-1.5">
-                Encrypted collection storage (IndexedDB) is not available in this browser profile. Wristfolio will use local
+                Encrypted collection storage (IndexedDB) is not available in this browser profile. HoroLair will use local
                 storage only — export a JSON backup regularly, especially on iPhone.
               </p>
             </div>
@@ -1545,7 +1545,7 @@ export default function Page() {
                 A dark, quiet place for the watches you love.
               </h1>
               <p className="mt-6 max-w-xl text-pretty text-[0.9375rem] font-normal leading-relaxed text-white/70">
-                Add a watch, upload a photo, and keep your collection at a glance. Wristfolio stores your collection locally
+                Add a watch, upload a photo, and keep your collection at a glance. HoroLair stores your collection locally
                 on this device and browser — private, with no account or cloud database. Export a backup to keep a copy or
                 carry your collection to another device.
               </p>
@@ -1618,11 +1618,11 @@ export default function Page() {
               embedded photos for a full restore.
             </p>
             <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              Wristfolio stores your collection locally on this device/browser. Mobile browsers may remove local website
+              HoroLair stores your collection locally on this device/browser. Mobile browsers may remove local website
               data. Export a backup regularly.
             </p>
             <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              To use your collection on another device, export a backup and import it there. Wristfolio does not currently sync
+              To use your collection on another device, export a backup and import it there. HoroLair does not currently sync
               between devices.
             </p>
             {watchStorageIssue && watches.length === 0 ? (
@@ -1639,7 +1639,7 @@ export default function Page() {
                 <p className="text-[11px] tracking-widest text-white/50">BACKUP REMINDER</p>
                 <p className="mt-1 text-sm text-white/70">Last export: {backupLastLabel}</p>
                 <p className="mt-1 text-[11px] leading-relaxed text-white/45">
-                  Optional local reminder (no notifications). Wristfolio will gently nudge you here when it’s time.
+                  Optional local reminder (no notifications). HoroLair will gently nudge you here when it’s time.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -1706,7 +1706,7 @@ export default function Page() {
               </button>
             </div>
             <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              Wristfolio does not currently sync between devices.
+              HoroLair does not currently sync between devices.
             </p>
             {showSubtleNeverExportedBackupCue ? (
               <div
@@ -2223,7 +2223,7 @@ export default function Page() {
                   a backup.
                 </p>
                 <p className="mt-3 text-[11px] leading-relaxed text-white/42">
-                  Wristfolio stores your collection locally on this device/browser. Mobile browsers may remove local website
+                  HoroLair stores your collection locally on this device/browser. Mobile browsers may remove local website
                   data. Export a backup regularly.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -2278,7 +2278,7 @@ export default function Page() {
 
         <footer className="mx-auto max-w-6xl border-t-2 border-[hsla(42,34%,34%,0.58)] px-4 pb-16 pt-10">
           <p className="max-w-2xl text-sm leading-relaxed text-white/58">
-            Wristfolio stores your collection locally on this device and browser — private, with no account or cloud
+            HoroLair stores your collection locally on this device and browser — private, with no account or cloud
             database. Watches added here do not appear on other devices by themselves; export a backup and import it where
             you want your collection to live next. On phones, browsers may discard site data to save space — keep a JSON export
             you trust.

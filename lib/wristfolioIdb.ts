@@ -1,5 +1,5 @@
 /**
- * IndexedDB layer for Wristfolio. `DB_NAME` and record keys keep the historical `watchvault` identifier so existing
+ * IndexedDB layer for HoroLair. `DB_NAME` and record keys keep the historical `watchvault` identifier so existing
  * on-device databases open correctly after rebranding. Changing these strings would create a new empty DB and hide
  * prior data until manual export/import.
  */

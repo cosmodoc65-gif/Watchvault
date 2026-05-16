@@ -78,7 +78,7 @@ function isExcludedSettingsLocalStorageKey(key: string): boolean {
 
 /**
  * Heuristic: any localStorage key that might hold a JSON watch array (not only known keys).
- * Matches `watchvault` in the key name on purpose — those are legacy Wristfolio storage keys; do not remove.
+ * Matches `watchvault` in the key name on purpose — those are legacy app storage keys; do not remove.
  */
 export function isLikelyWatchListLocalStorageKey(key: string): boolean {
   const l = key.toLowerCase();
@@ -291,7 +291,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
     combined.length > 0 && (lsRead.issue !== null || lsRead.blockEmptyPersist) && lsRead.watches.length === 0;
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[Wristfolio storage audit]", {
+    console.info("[HoroLair storage audit]", {
       host: devLocationLabel(),
       localStorageKeysRelevant: auditLocalStorageRelevantKeys(),
       indexedDbOpenOk: idbProbe.ok,
@@ -328,7 +328,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
       likelyUnreadableWatchPayloadElsewhere: unreadableWatchLikeLocalStorage,
     });
     if (process.env.NODE_ENV === "development") {
-      console.info("[Wristfolio storage]", {
+      console.info("[HoroLair storage]", {
         host: devLocationLabel(),
         storageKeyUsed: null,
         watchesLoaded: 0,
@@ -375,7 +375,7 @@ export async function loadWatchesFromAllSources(): Promise<LoadWatchesFromStorag
   // load migrations (e.g. Strict Mode, slow IndexedDB on mobile, or Vercel cold-start + client navigation).
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[Wristfolio storage]", {
+    console.info("[HoroLair storage]", {
       host: devLocationLabel(),
       storageKeyUsed: sourceKey,
       watchesLoaded: watches.length,
@@ -460,7 +460,7 @@ export async function persistWatchCollection(
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[Wristfolio storage persist]", {
+    console.info("[HoroLair storage persist]", {
       host: devLocationLabel(),
       primaryWritten,
       indexedDbTried,

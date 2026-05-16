@@ -1,4 +1,4 @@
-# Wristfolio
+# HoroLair
 
 Dark luxury watch collection app — local-only state (no auth, no cloud database).
 
