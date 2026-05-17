@@ -75,10 +75,22 @@ function writeLocalUsageCounters(counters: LocalUsageCounters) {
   }
 }
 
+function isDebugMode(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URLSearchParams(window.location.search).get("debug") === "true";
+  } catch {
+    return false;
+  }
+}
+
 function incrementLocalUsageCounter(key: LocalUsageCounterKey): LocalUsageCounters {
   const next = readLocalUsageCounters();
   next[key] += 1;
   writeLocalUsageCounters(next);
+  if (process.env.NODE_ENV === "development") {
+    console.info("[HoroLair analytics]", { event: key, value: next[key], counters: next });
+  }
   return next;
 }
 
@@ -925,7 +937,7 @@ export default function Page() {
     } catch {
       /* ignore */
     }
-    setDebugUsageEnabled(new URLSearchParams(window.location.search).get("debug") === "true");
+    setDebugUsageEnabled(isDebugMode());
     setLocalUsageCounters(readLocalUsageCounters());
     return () => {
       loadGenerationRef.current += 1;
