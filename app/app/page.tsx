@@ -28,71 +28,13 @@ import {
   WRISTFOLIO_COLLECTION_CURRENCY_KEY,
 } from "@/lib/watchStorageKeys";
 import { deleteWatchImage, getWatchImageBlob, saveWatchImage } from "@/lib/wristfolioIdb";
+import { incrementLocalUsageCounter, type LocalUsageCounterKey } from "@/lib/localUsageAnalytics";
 
 const FEEDBACK_MAILTO =
   "mailto:DrASchuter@proton.me?subject=" +
   encodeURIComponent("HoroLair beta feedback") +
   "&body=" +
   encodeURIComponent("Hi, I tested HoroLair and my feedback is…");
-
-const LOCAL_USAGE_COUNTERS_KEY = "horolair-local-usage-counters";
-const LOCAL_USAGE_COUNTER_KEYS = ["addWatchClicks", "watchesSaved", "imageUploads", "pdfExports", "wishlistAdds"] as const;
-type LocalUsageCounterKey = (typeof LOCAL_USAGE_COUNTER_KEYS)[number];
-type LocalUsageCounters = Record<LocalUsageCounterKey, number>;
-
-const EMPTY_LOCAL_USAGE_COUNTERS: LocalUsageCounters = {
-  addWatchClicks: 0,
-  watchesSaved: 0,
-  imageUploads: 0,
-  pdfExports: 0,
-  wishlistAdds: 0,
-};
-
-function normalizeLocalUsageCounters(value: unknown): LocalUsageCounters {
-  const source = value && typeof value === "object" ? (value as Partial<Record<LocalUsageCounterKey, unknown>>) : {};
-  return LOCAL_USAGE_COUNTER_KEYS.reduce<LocalUsageCounters>((acc, key) => {
-    const n = Number(source[key]);
-    acc[key] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
-    return acc;
-  }, { ...EMPTY_LOCAL_USAGE_COUNTERS });
-}
-
-function readLocalUsageCounters(): LocalUsageCounters {
-  if (typeof window === "undefined") return { ...EMPTY_LOCAL_USAGE_COUNTERS };
-  try {
-    return normalizeLocalUsageCounters(JSON.parse(window.localStorage.getItem(LOCAL_USAGE_COUNTERS_KEY) ?? "{}"));
-  } catch {
-    return { ...EMPTY_LOCAL_USAGE_COUNTERS };
-  }
-}
-
-function writeLocalUsageCounters(counters: LocalUsageCounters) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(LOCAL_USAGE_COUNTERS_KEY, JSON.stringify(counters));
-  } catch {
-    /* local debug counters are best-effort only */
-  }
-}
-
-function isDebugMode(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return new URLSearchParams(window.location.search).get("debug") === "true";
-  } catch {
-    return false;
-  }
-}
-
-function incrementLocalUsageCounter(key: LocalUsageCounterKey): LocalUsageCounters {
-  const next = readLocalUsageCounters();
-  next[key] += 1;
-  writeLocalUsageCounters(next);
-  if (process.env.NODE_ENV === "development") {
-    console.info("[HoroLair analytics]", { event: key, value: next[key], counters: next });
-  }
-  return next;
-}
 
 function triggerTextDownload(filename: string, text: string, mime: string) {
   const blob = new Blob([text], { type: mime });
@@ -825,8 +767,6 @@ export default function Page() {
   const [collectionPersistenceWarning, setCollectionPersistenceWarning] = useState<string | null>(null);
   const loadGenerationRef = useRef(0);
   const [mainNavView, setMainNavView] = useState<MainNavView>("dashboard");
-  const [debugUsageEnabled, setDebugUsageEnabled] = useState(false);
-  const [localUsageCounters, setLocalUsageCounters] = useState<LocalUsageCounters>(EMPTY_LOCAL_USAGE_COUNTERS);
 
   const goMainView = useCallback((v: MainNavView) => {
     setMainNavView(v);
@@ -836,13 +776,7 @@ export default function Page() {
   }, []);
 
   const trackLocalUsage = useCallback((key: LocalUsageCounterKey) => {
-    setLocalUsageCounters(incrementLocalUsageCounter(key));
-  }, []);
-
-  const resetLocalUsageCounters = useCallback(() => {
-    const reset = { ...EMPTY_LOCAL_USAGE_COUNTERS };
-    writeLocalUsageCounters(reset);
-    setLocalUsageCounters(reset);
+    incrementLocalUsageCounter(key);
   }, []);
 
   const goAddWatchFromClick = useCallback(() => {
@@ -937,8 +871,6 @@ export default function Page() {
     } catch {
       /* ignore */
     }
-    setDebugUsageEnabled(isDebugMode());
-    setLocalUsageCounters(readLocalUsageCounters());
     return () => {
       loadGenerationRef.current += 1;
     };
@@ -2400,33 +2332,6 @@ export default function Page() {
           </a>
         </footer>
       </main>
-
-      {debugUsageEnabled ? (
-        <aside
-          className="fixed bottom-6 right-4 z-[120] w-[min(92vw,20rem)] rounded-2xl border-2 border-[hsla(44,42%,56%,0.92)] bg-[#0c0c0f]/95 p-4 text-white/88 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.85)] backdrop-blur-md"
-          aria-label="Local usage debug panel"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,82%,0.86)]">
-                Debug usage
-              </p>
-              <p className="mt-1 text-[12px] leading-relaxed text-white/50">Stored locally in this browser only.</p>
-            </div>
-            <button type="button" onClick={resetLocalUsageCounters} className={classNames("shrink-0", gold.btnSmSecondary)}>
-              Reset
-            </button>
-          </div>
-          <dl className="mt-4 grid gap-2 text-sm">
-            {LOCAL_USAGE_COUNTER_KEYS.map((key) => (
-              <div key={key} className="flex items-center justify-between gap-4 rounded-xl bg-white/[0.04] px-3 py-2">
-                <dt className="font-medium text-white/68">{key}</dt>
-                <dd className="font-semibold tabular-nums text-white/94">{localUsageCounters[key]}</dd>
-              </div>
-            ))}
-          </dl>
-        </aside>
-      ) : null}
 
       {toastMessage ? (
         <div

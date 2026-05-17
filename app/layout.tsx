@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import DebugUsagePanel from "./DebugUsagePanel";
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 const description =
   "HoroLair is a private collection manager for watch collectors to catalogue watches, track values, record notes, and build a visual archive of their collection.";
@@ -43,9 +46,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-  {children}
-  <Analytics />
-</body>
+        {children}
+        <Suspense fallback={null}>
+          <DebugUsagePanel />
+        </Suspense>
+        <Analytics />
+      </body>
     </html>
   );
 }
