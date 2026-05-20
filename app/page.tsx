@@ -96,7 +96,7 @@ const watchShowcaseItems = [
     detail: "Timing bezel and lume",
     note: "Purpose-built dive watch proportions and bezel.",
     image: {
-      src: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Citizen_Promaster_Eco-Drive_BJ8050-08E_Diver%27s_300_m.jpg",
+      src: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Citizen_Promaster_Eco-Drive_BJ8050-08E_Diver%27s_300_m_%28without_background%29.jpg/500px-Citizen_Promaster_Eco-Drive_BJ8050-08E_Diver%27s_300_m_%28without_background%29.jpg",
       alt: "Citizen Promaster Eco-Drive 300 meter diver watch with dive bezel.",
       objectPosition: "50% 52%",
     },
@@ -107,9 +107,9 @@ const watchShowcaseItems = [
     detail: "Legible military dial",
     note: "High-contrast numerals in a field-ready case.",
     image: {
-      src: "https://upload.wikimedia.org/wikipedia/commons/2/25/HamiltonKhakiFieldOfficer-002.jpg",
-      alt: "Hamilton Khaki Field Officer field watch with legible military-style numerals.",
-      objectPosition: "50% 48%",
+      src: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Hamilton_Khaki_Field_Team_Earth_Harrison_Ford_%28strong_crop_plus_perspective_correction%29.jpg/500px-Hamilton_Khaki_Field_Team_Earth_Harrison_Ford_%28strong_crop_plus_perspective_correction%29.jpg",
+      alt: "Hamilton Khaki Field Team Earth field watch with legible military-style numerals.",
+      objectPosition: "50% 50%",
     },
   },
 ] satisfies readonly ShowcaseWatch[];
@@ -124,25 +124,25 @@ function WatchShowcaseCard({
   return (
     <article
       className={classNames(
-        "group relative flex min-h-full flex-col overflow-hidden rounded-[1.45rem] border border-[hsla(42,40%,58%,0.38)] bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025)_44%,rgba(0,0,0,0.26))] p-2.5 shadow-[0_18px_46px_-28px_rgba(0,0,0,0.9),inset_0_1px_0_0_hsla(44,38%,74%,0.14)] transition duration-300 ease-out hover:-translate-y-0.5 hover:border-[hsla(44,44%,68%,0.62)] hover:shadow-[0_24px_58px_-30px_hsla(42,42%,18%,0.72),inset_0_1px_0_0_hsla(44,42%,78%,0.2)]",
+        "group relative flex min-h-full flex-col overflow-hidden rounded-[1.45rem] border border-[hsla(42,34%,52%,0.32)] bg-[linear-gradient(180deg,rgba(255,255,255,0.052),rgba(255,255,255,0.018)_48%,rgba(0,0,0,0.32))] p-2.5 shadow-[0_18px_46px_-30px_rgba(0,0,0,0.92),inset_0_1px_0_0_hsla(44,34%,72%,0.12)] transition duration-300 ease-out hover:-translate-y-0.5 hover:border-[hsla(44,38%,66%,0.52)] hover:shadow-[0_24px_58px_-34px_hsla(42,42%,18%,0.68),inset_0_1px_0_0_hsla(44,42%,78%,0.18)]",
         className,
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(260px_180px_at_50%_0%,hsla(44,50%,64%,0.12),transparent_68%)] opacity-80 transition duration-300 group-hover:opacity-100" />
-      <div className="relative aspect-[5/4] overflow-hidden rounded-[1.05rem] border border-[hsla(42,34%,52%,0.3)] bg-black/52">
+      <div className="absolute inset-0 bg-[radial-gradient(260px_180px_at_50%_0%,hsla(44,46%,58%,0.1),transparent_68%)] opacity-80 transition duration-300 group-hover:opacity-100" />
+      <div className="relative aspect-square overflow-hidden rounded-[1.05rem] border border-[hsla(42,30%,48%,0.28)] bg-[radial-gradient(circle_at_50%_36%,rgba(255,255,255,0.09),transparent_44%),linear-gradient(180deg,rgba(9,9,10,0.92),rgba(2,2,3,0.98))]">
         <Image
           src={watch.image.src}
           alt={watch.image.alt}
           fill
           sizes="(min-width: 1024px) 190px, (min-width: 640px) 42vw, 92vw"
           priority={watch.image.priority ?? false}
-          className="object-cover transition duration-500 ease-out group-hover:scale-[1.035]"
+          className="object-cover opacity-90 saturate-[0.72] brightness-[0.74] contrast-[1.12] transition duration-500 ease-out group-hover:scale-[1.025] group-hover:opacity-95"
           style={{ objectPosition: watch.image.objectPosition }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_46%,rgba(0,0,0,0.36)_100%)]" />
-        <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,48%,78%,0.48)] to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_32%,rgba(0,0,0,0.32)_78%),linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.48)_100%)]" />
+        <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,42%,76%,0.4)] to-transparent" />
       </div>
-      <div className="relative flex min-h-[8.5rem] flex-1 flex-col items-center justify-center gap-2 px-3 py-4 text-center">
+      <div className="relative flex min-h-[6.9rem] flex-1 flex-col items-center justify-center gap-2 px-3 py-4 text-center">
         <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.24em] text-[hsla(44,48%,76%,0.88)]">
           {watch.category}
         </p>
@@ -150,9 +150,44 @@ function WatchShowcaseCard({
           {watch.detail}
         </h3>
         <p className="text-[12px] font-medium leading-snug text-white/60">{watch.model}</p>
-        <p className="max-w-[15rem] text-[11px] leading-relaxed text-white/43">{watch.note}</p>
       </div>
     </article>
+  );
+}
+
+function BrandLockup({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className={classNames(
+          "relative shrink-0 overflow-hidden rounded-full border border-[hsla(42,42%,62%,0.42)] bg-black/60 shadow-[0_14px_34px_-24px_hsla(42,52%,34%,0.84),inset_0_1px_0_0_hsla(44,38%,74%,0.18)]",
+          compact ? "h-10 w-10" : "h-12 w-12 sm:h-14 sm:w-14",
+        )}
+      >
+        <Image
+          src="/brand/horolair-logo.svg"
+          alt=""
+          fill
+          sizes={compact ? "40px" : "(min-width: 640px) 56px, 48px"}
+          priority={!compact}
+          className="object-cover"
+        />
+      </div>
+      <div>
+        <p
+          className={classNames(
+            vaultSerif.className,
+            "bg-gradient-to-b from-[hsla(46,50%,99%,0.99)] via-[hsla(44,42%,90%,0.98)] to-[hsla(42,40%,68%,0.97)] bg-clip-text font-bold tracking-[0.03em] text-transparent",
+            compact ? "text-2xl" : "text-2xl sm:text-3xl",
+          )}
+        >
+          HoroLair
+        </p>
+        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[hsla(44,40%,78%,0.86)]">
+          Private collector vault
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -161,14 +196,14 @@ function ProductMockup() {
     <div className={classNames("relative overflow-hidden rounded-[2rem] p-4 sm:p-5 lg:p-6", frameLg)}>
       <div className="absolute inset-0 bg-[radial-gradient(620px_320px_at_22%_12%,hsla(44,48%,58%,0.24),transparent_62%),radial-gradient(520px_280px_at_88%_80%,hsla(42,38%,42%,0.18),transparent_68%)]" />
       <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,50%,78%,0.52)] to-transparent" />
-      <div className="relative rounded-[1.6rem] border border-[hsla(42,40%,58%,0.36)] bg-black/36 p-3 shadow-[inset_0_1px_0_0_hsla(44,36%,70%,0.13)] sm:p-4">
-        <div className="mb-4 flex flex-col items-center justify-center gap-3 text-center sm:mb-5 sm:flex-row sm:justify-between sm:text-left">
+      <div className="relative rounded-[1.6rem] border border-[hsla(42,36%,54%,0.32)] bg-black/38 p-3 shadow-[inset_0_1px_0_0_hsla(44,34%,68%,0.12)] sm:p-4">
+        <div className="mb-5 flex flex-col items-center justify-center gap-3 text-center sm:mb-6 sm:flex-row sm:justify-between sm:text-left">
           <div className="flex flex-col items-center justify-center sm:items-start">
             <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.26em] text-[hsla(44,46%,76%,0.88)]">
-              Collector showcase
+              Editorial reference board
             </p>
             <p className="mt-2 text-[12px] leading-relaxed text-white/54">
-              Complication-aware references for a private vault
+              Cohesive, complication-aware placeholders for your future collection photos
             </p>
           </div>
           <div className="flex items-center justify-center gap-1.5" aria-hidden>
@@ -178,7 +213,7 @@ function ProductMockup() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3.5 min-[520px]:grid-cols-2 lg:grid-cols-6">
           {watchShowcaseItems.map((watch, index) => (
             <WatchShowcaseCard
               key={watch.category}
@@ -188,7 +223,7 @@ function ProductMockup() {
           ))}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-[hsla(42,38%,54%,0.34)] bg-white/[0.035] p-4 sm:mt-5">
+        <div className="mt-5 rounded-2xl border border-[hsla(42,34%,50%,0.28)] bg-white/[0.028] p-4 sm:mt-6">
           <div className="flex flex-col items-center justify-center gap-1 text-center sm:flex-row sm:justify-between">
             <p className="text-[11px] font-semibold uppercase leading-none tracking-[0.2em] text-white/48">
               Vault status
@@ -221,20 +256,8 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(780px_360px_at_25%_10%,hsla(44,48%,50%,0.12),transparent_60%),radial-gradient(680px_380px_at_88%_12%,hsla(42,38%,42%,0.12),transparent_62%)]" />
         <div className="relative mx-auto flex max-w-6xl flex-col gap-12 px-4 pb-16 pt-8 sm:pb-20 lg:min-h-screen lg:justify-center lg:py-16">
           <header className={classNames("flex flex-col gap-5 rounded-3xl p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between", frameLg)}>
-            <div>
-              <p
-                className={classNames(
-                  vaultSerif.className,
-                  "bg-gradient-to-b from-[hsla(46,50%,99%,0.99)] via-[hsla(44,42%,90%,0.98)] to-[hsla(42,40%,68%,0.97)] bg-clip-text text-3xl font-bold tracking-[0.03em] text-transparent",
-                )}
-              >
-                HoroLair
-              </p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,40%,78%,0.9)]">
-                Private. Local. Yours.
-              </p>
-            </div>
-            <nav className="flex flex-wrap items-center gap-2 text-sm" aria-label="Landing navigation">
+            <BrandLockup />
+            <nav className="flex flex-wrap items-center gap-2 text-sm lg:justify-end" aria-label="Landing navigation">
               <a href="#features" className="min-h-[40px] rounded-xl px-3 py-2 font-medium text-white/68 transition hover:bg-white/[0.05] hover:text-white">
                 Features
               </a>
@@ -253,9 +276,9 @@ export default function LandingPage() {
             </nav>
           </header>
 
-          <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-            <div>
-              <p className={classNames("mb-5 inline-flex", pill)}>PRIVATE WATCH VAULT FOR COLLECTORS</p>
+          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
+            <div className="max-w-2xl">
+              <p className={classNames("mb-5 inline-flex", pill)}>PRIVATE HOROLOGY VAULT</p>
               <h1
                 className={classNames(
                   vaultSerif.className,
@@ -265,11 +288,11 @@ export default function LandingPage() {
                 A quiet lair for serious watch collections.
               </h1>
               <p className="mt-5 max-w-xl text-[13px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,78%,0.86)]">
-                Private watch collection tracker for collectors.
+                Collector-grade records for watches, service, values, photos, and provenance.
               </p>
               <p className="mt-6 max-w-2xl text-pretty text-base leading-relaxed text-white/70 sm:text-[1.08rem]">
-                Track wear history, values, service records, photos, notes, cost-per-wear insights, and export-ready
-                collection data locally on your own device.
+                Track wear history, service records, photos, notes, cost-per-wear insights, and export-ready collection
+                data locally on your own device.
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link href="/app" className={classNames("inline-flex min-h-[50px] items-center justify-center sm:min-w-[12rem]", btnPrimary)}>
@@ -364,19 +387,7 @@ export default function LandingPage() {
       <footer className="mx-auto max-w-6xl px-4 pb-12">
         <div className="border-t-2 border-[hsla(42,34%,34%,0.58)] pt-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div>
-              <p
-                className={classNames(
-                  vaultSerif.className,
-                  "bg-gradient-to-b from-[hsla(46,50%,99%,0.99)] via-[hsla(44,42%,90%,0.98)] to-[hsla(42,40%,68%,0.97)] bg-clip-text text-3xl font-bold tracking-[0.03em] text-transparent",
-                )}
-              >
-                HoroLair
-              </p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,40%,78%,0.9)]">
-                Private. Local. Yours.
-              </p>
-            </div>
+            <BrandLockup compact />
             <nav className="flex flex-wrap gap-x-4 gap-y-2 text-sm" aria-label="Footer navigation">
               <Link href="/" className="text-white/58 transition hover:text-white">Home</Link>
               <a href="#features" className="text-white/58 transition hover:text-white">Features</a>
