@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Cormorant_Garamond } from "next/font/google";
 
 const vaultSerif = Cormorant_Garamond({
@@ -9,9 +10,6 @@ const vaultSerif = Cormorant_Garamond({
 function classNames(...values: Array<string | false | undefined | null>) {
   return values.filter(Boolean).join(" ");
 }
-
-const frame =
-  "border-2 border-[hsla(43,44%,64%,0.96)] bg-white/[0.04] shadow-[inset_0_1px_0_0_hsla(44,40%,76%,0.26),0_0_0_1px_rgba(0,0,0,0.52),0_12px_44px_-14px_hsla(42,36%,10%,0.46)]";
 
 const frameLg =
   "border-2 border-[hsla(42,42%,60%,0.94)] bg-white/[0.04] shadow-[inset_0_1px_0_0_hsla(43,36%,70%,0.22),0_0_0_1px_rgba(0,0,0,0.56),0_14px_52px_-16px_hsla(41,34%,9%,0.48)]";
@@ -40,24 +38,99 @@ const features = [
   },
 ] as const;
 
-function WatchMockupCard({ label, detail, className }: { label: string; detail: string; className?: string }) {
+const showcaseWatches = [
+  {
+    category: "Moonphase",
+    model: "Longines Conquest Classic Moonphase",
+    detail: "Calendar moon display",
+    note: "A true moonphase aperture for dress complications.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Longines_Conquest_Classic_Moonphase_Chronograph.jpg/500px-Longines_Conquest_Classic_Moonphase_Chronograph.jpg",
+    imagePosition: "50% 48%",
+    alt: "Longines Conquest Classic Moonphase Chronograph watch showing a moonphase complication.",
+    priority: true,
+  },
+  {
+    category: "Chronograph",
+    model: "Omega Speedmaster Professional",
+    detail: "Pushers and subdials",
+    note: "A collector-recognizable chronograph layout.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/OMEGA-Speedmaster-Professional-Front_%28cropped%29.jpg/500px-OMEGA-Speedmaster-Professional-Front_%28cropped%29.jpg",
+    imagePosition: "50% 50%",
+    alt: "Omega Speedmaster Professional chronograph watch with pushers and three subdials.",
+    priority: true,
+  },
+  {
+    category: "GMT",
+    model: "Rolex GMT-Master II 16710",
+    detail: "24-hour travel bezel",
+    note: "Dual-time hardware with the correct GMT character.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Rolex_GMT_Master_II_-_16710_%28without_background%2C_cropped_to_casing%29.jpg/500px-Rolex_GMT_Master_II_-_16710_%28without_background%2C_cropped_to_casing%29.jpg",
+    imagePosition: "50% 50%",
+    alt: "Rolex GMT-Master II watch showing a 24-hour bezel and GMT layout.",
+  },
+  {
+    category: "Diver",
+    model: "Citizen Promaster Diver 300 m",
+    detail: "Timing bezel and lume",
+    note: "Purpose-built dive watch proportions and bezel.",
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/b/b0/Citizen_Promaster_Eco-Drive_BJ8050-08E_Diver%27s_300_m.jpg",
+    imagePosition: "50% 52%",
+    alt: "Citizen Promaster Eco-Drive 300 meter diver watch with dive bezel.",
+  },
+  {
+    category: "Field Watch",
+    model: "Hamilton Khaki Field Officer",
+    detail: "Legible military dial",
+    note: "High-contrast numerals in a field-ready case.",
+    image: "https://upload.wikimedia.org/wikipedia/commons/2/25/HamiltonKhakiFieldOfficer-002.jpg",
+    imagePosition: "50% 48%",
+    alt: "Hamilton Khaki Field Officer field watch with legible military-style numerals.",
+  },
+] as const;
+
+function WatchShowcaseCard({
+  watch,
+  className,
+}: {
+  watch: (typeof showcaseWatches)[number];
+  className?: string;
+}) {
   return (
-    <div className={classNames("relative overflow-hidden rounded-2xl p-4", frame, className)}>
-      <div className="absolute inset-0 bg-[radial-gradient(220px_140px_at_50%_18%,hsla(44,48%,64%,0.18),transparent_62%)]" />
-      <div className="relative flex h-full flex-col justify-between">
-        <div className="mx-auto mt-2 flex h-20 w-20 items-center justify-center rounded-full border-2 border-[hsla(44,46%,68%,0.86)] bg-black/36 shadow-[inset_0_1px_0_0_hsla(45,40%,76%,0.22),0_14px_28px_-18px_hsla(42,46%,24%,0.55)]">
-          <div className="relative h-14 w-14 rounded-full border border-[hsla(44,40%,68%,0.44)] bg-[radial-gradient(circle_at_50%_38%,hsla(44,40%,70%,0.18),transparent_42%),linear-gradient(145deg,rgba(255,255,255,0.05),rgba(0,0,0,0.2))]">
-            <span className="absolute left-1/2 top-1.5 h-2 w-px -translate-x-1/2 rounded-full bg-[hsla(44,52%,76%,0.85)]" />
-            <span className="absolute left-1/2 top-1/2 h-px w-6 origin-left rotate-[28deg] rounded-full bg-[hsla(44,52%,76%,0.78)]" />
-            <span className="absolute left-1/2 top-[30%] h-6 w-px origin-bottom -rotate-[36deg] rounded-full bg-[hsla(44,44%,68%,0.72)]" />
-          </div>
-        </div>
-        <div className="relative mt-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,74%,0.86)]">{label}</p>
-          <p className="mt-1 text-sm font-medium text-white/78">{detail}</p>
-        </div>
+    <article
+      className={classNames(
+        "group relative flex min-h-full flex-col overflow-hidden rounded-[1.45rem] border border-[hsla(42,40%,58%,0.38)] bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025)_44%,rgba(0,0,0,0.26))] p-2.5 shadow-[0_18px_46px_-28px_rgba(0,0,0,0.9),inset_0_1px_0_0_hsla(44,38%,74%,0.14)] transition duration-300 ease-out hover:-translate-y-0.5 hover:border-[hsla(44,44%,68%,0.62)] hover:shadow-[0_24px_58px_-30px_hsla(42,42%,18%,0.72),inset_0_1px_0_0_hsla(44,42%,78%,0.2)]",
+        className,
+      )}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(260px_180px_at_50%_0%,hsla(44,50%,64%,0.12),transparent_68%)] opacity-80 transition duration-300 group-hover:opacity-100" />
+      <div className="relative aspect-[5/4] overflow-hidden rounded-[1.05rem] border border-[hsla(42,34%,52%,0.3)] bg-black/52">
+        <Image
+          src={watch.image}
+          alt={watch.alt}
+          fill
+          sizes="(min-width: 1024px) 190px, (min-width: 640px) 42vw, 92vw"
+          priority={watch.priority}
+          className="object-cover transition duration-500 ease-out group-hover:scale-[1.035]"
+          style={{ objectPosition: watch.imagePosition }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_46%,rgba(0,0,0,0.36)_100%)]" />
+        <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,48%,78%,0.48)] to-transparent" />
       </div>
-    </div>
+      <div className="relative flex min-h-[8.5rem] flex-1 flex-col items-center justify-center gap-2 px-3 py-4 text-center">
+        <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.24em] text-[hsla(44,48%,76%,0.88)]">
+          {watch.category}
+        </p>
+        <h3 className="text-balance text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] text-white/94">
+          {watch.detail}
+        </h3>
+        <p className="text-[12px] font-medium leading-snug text-white/60">{watch.model}</p>
+        <p className="max-w-[15rem] text-[11px] leading-relaxed text-white/43">{watch.note}</p>
+      </div>
+    </article>
   );
 }
 
@@ -67,39 +140,47 @@ function ProductMockup() {
       <div className="absolute inset-0 bg-[radial-gradient(620px_320px_at_22%_12%,hsla(44,48%,58%,0.24),transparent_62%),radial-gradient(520px_280px_at_88%_80%,hsla(42,38%,42%,0.18),transparent_68%)]" />
       <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,50%,78%,0.52)] to-transparent" />
       <div className="relative rounded-[1.6rem] border border-[hsla(42,40%,58%,0.36)] bg-black/36 p-3 shadow-[inset_0_1px_0_0_hsla(44,36%,70%,0.13)] sm:p-4">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[hsla(44,46%,76%,0.88)]">
-              Collection overview
+        <div className="mb-4 flex flex-col items-center justify-center gap-3 text-center sm:mb-5 sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex flex-col items-center justify-center sm:items-start">
+            <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.26em] text-[hsla(44,46%,76%,0.88)]">
+              Collector showcase
             </p>
-            <p className="mt-1 text-[12px] text-white/48">A private collector workspace</p>
+            <p className="mt-2 text-[12px] leading-relaxed text-white/54">
+              Complication-aware references for a private vault
+            </p>
           </div>
-          <div className="flex gap-1.5" aria-hidden>
+          <div className="flex items-center justify-center gap-1.5" aria-hidden>
             <span className="h-2 w-2 rounded-full bg-[hsla(44,54%,70%,0.7)]" />
             <span className="h-2 w-2 rounded-full bg-white/18" />
             <span className="h-2 w-2 rounded-full bg-white/12" />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-          <WatchMockupCard label="Dress" detail="Moonphase" />
-          <WatchMockupCard label="Sport" detail="Chronograph" className="translate-y-3" />
-          <WatchMockupCard label="Diver" detail="Daily" />
+        <div className="grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-6">
+          {showcaseWatches.map((watch, index) => (
+            <WatchShowcaseCard
+              key={watch.category}
+              watch={watch}
+              className={index < 2 ? "lg:col-span-3" : "lg:col-span-2"}
+            />
+          ))}
         </div>
 
-        <div className="mt-7 rounded-2xl border border-[hsla(42,38%,54%,0.34)] bg-white/[0.035] p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/46">Vault status</p>
-            <p className="text-[11px] text-[hsla(44,44%,78%,0.82)]">Local only</p>
+        <div className="mt-4 rounded-2xl border border-[hsla(42,38%,54%,0.34)] bg-white/[0.035] p-4 sm:mt-5">
+          <div className="flex flex-col items-center justify-center gap-1 text-center sm:flex-row sm:justify-between">
+            <p className="text-[11px] font-semibold uppercase leading-none tracking-[0.2em] text-white/48">
+              Vault status
+            </p>
+            <p className="text-[11px] font-medium leading-none text-[hsla(44,44%,78%,0.82)]">Local only</p>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
             <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-[hsla(42,46%,42%,0.86)] to-[hsla(46,52%,74%,0.9)]" />
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            {["Private", "Tracked", "Exportable"].map((label) => (
+          <div className="mt-4 grid grid-cols-1 gap-2 text-center min-[420px]:grid-cols-3">
+            {["Private archive", "Collector details", "Export ready"].map((label) => (
               <div
                 key={label}
-                className="rounded-xl border border-[hsla(42,40%,58%,0.42)] bg-black/24 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,44%,82%,0.86)]"
+                className="flex min-h-[2.65rem] items-center justify-center rounded-xl border border-[hsla(42,40%,58%,0.42)] bg-black/24 px-2 py-2 text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.16em] text-[hsla(44,44%,82%,0.86)]"
               >
                 {label}
               </div>
