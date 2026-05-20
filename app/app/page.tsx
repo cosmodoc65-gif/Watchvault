@@ -351,22 +351,119 @@ function CurrencyDropdown({
   );
 }
 
-function Placeholder() {
+function Placeholder({ compact = false, label = "No photo" }: { compact?: boolean; label?: string }) {
   return (
     <div
       className={classNames(
-        "flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-white/[0.04] to-transparent",
+        "flex h-full w-full items-center justify-center rounded-xl bg-[radial-gradient(circle_at_50%_38%,rgba(232,202,137,0.12),transparent_42%),linear-gradient(145deg,rgba(255,255,255,0.045),rgba(0,0,0,0.28))]",
         gold.frame,
       )}
     >
       <div className="text-center">
         <div
           className={classNames(
-            "mx-auto mb-2 h-10 w-10 rounded-full bg-black/30",
+            "mx-auto rounded-full bg-black/30",
+            compact ? "h-6 w-6" : "mb-2 h-10 w-10",
             "border-2 border-[hsla(42,34%,50%,0.85)] shadow-[inset_0_1px_0_0_hsla(44,28%,58%,0.14)]",
           )}
         />
-        <p className="text-[13px] font-medium tracking-wide text-white/62">No photo</p>
+        {compact ? null : <p className="text-[13px] font-medium tracking-wide text-white/62">{label}</p>}
+      </div>
+    </div>
+  );
+}
+
+type EditorialImageVariant = "thumbnail" | "card" | "detail" | "preview";
+
+function EditorialWatchImage({
+  src,
+  alt,
+  variant,
+  className,
+  interactive = false,
+}: {
+  src?: string;
+  alt: string;
+  variant: EditorialImageVariant;
+  className?: string;
+  interactive?: boolean;
+}) {
+  const compact = variant === "thumbnail";
+
+  return (
+    <div
+      className={classNames(
+        "relative overflow-hidden bg-[radial-gradient(circle_at_50%_36%,rgba(255,255,255,0.08),transparent_42%),linear-gradient(180deg,rgba(9,9,10,0.94),rgba(2,2,3,0.98))]",
+        variant === "thumbnail" ? "h-14 w-14 shrink-0 rounded-xl border border-[hsla(42,34%,54%,0.5)]" : "",
+        variant === "card" ? "aspect-[4/3] w-full" : "",
+        variant === "detail" ? "h-full w-full" : "",
+        variant === "preview" ? "h-full w-full rounded-xl" : "",
+        className,
+      )}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          draggable={false}
+          className={classNames(
+            "h-full w-full object-cover opacity-[0.92] grayscale saturate-[0.42] brightness-[0.78] contrast-[1.16]",
+            interactive ? "transition duration-500 ease-out group-hover:scale-[1.025] group-hover:opacity-100" : "",
+          )}
+        />
+      ) : (
+        <Placeholder compact={compact} />
+      )}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_34%,rgba(0,0,0,0.34)_82%),linear-gradient(180deg,rgba(0,0,0,0.06),rgba(0,0,0,0.46)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,42%,76%,0.36)] to-transparent" />
+    </div>
+  );
+}
+
+function VaultAtmospherePanel({
+  watch,
+  imageSrc,
+  collectionLabel,
+  onAddWatch,
+}: {
+  watch?: Watch;
+  imageSrc?: string;
+  collectionLabel: string;
+  onAddWatch: () => void;
+}) {
+  const title = watch ? `${watch.brand} ${watch.model}` : "Your private vault";
+  const subtitle = watch
+    ? [watch.reference ? `Ref. ${watch.reference}` : null, watch.year || null].filter(Boolean).join(" · ") || "Recently added"
+    : "Add a watch photo to create an atmospheric collection cover.";
+
+  return (
+    <div className={classNames("relative min-h-[18rem] overflow-hidden rounded-3xl p-5 sm:min-h-[21rem] sm:p-6", gold.frameLg)}>
+      {imageSrc ? (
+        <img
+          src={imageSrc}
+          alt={watch ? `${watch.brand} ${watch.model}` : "Collection cover"}
+          draggable={false}
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.78] grayscale saturate-[0.34] brightness-[0.58] contrast-[1.18]"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[radial-gradient(420px_280px_at_50%_18%,hsla(44,40%,58%,0.17),transparent_62%),linear-gradient(145deg,rgba(255,255,255,0.045),rgba(0,0,0,0.42))]" />
+      )}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,transparent_0,rgba(0,0,0,0.18)_35%,rgba(0,0,0,0.78)_100%),linear-gradient(180deg,rgba(0,0,0,0.2),rgba(0,0,0,0.88)_100%)]" />
+      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,46%,74%,0.5)] to-transparent" />
+      <div className="relative flex h-full min-h-[15.5rem] flex-col justify-end">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[hsla(44,44%,76%,0.9)]">
+          Vault atmosphere
+        </p>
+        <h2 className="mt-3 text-balance text-2xl font-semibold tracking-tight text-white/95 sm:text-3xl">{title}</h2>
+        <p className="mt-2 max-w-md text-sm leading-relaxed text-white/62">{subtitle}</p>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <span className={classNames("rounded-full px-3 py-1.5 text-[11px] uppercase tracking-widest", gold.pill)}>
+            {collectionLabel}
+          </span>
+          <button type="button" onClick={onAddWatch} className={classNames("min-h-[40px]", gold.btnSmSecondary)}>
+            Add watch photo
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -420,18 +517,7 @@ function DashboardRecentWatchRow({
       onClick={() => onOpenDetail(watch)}
       className="group flex w-full items-center gap-3 rounded-2xl border border-[hsla(42,34%,48%,0.48)] bg-black/28 p-2.5 text-left transition hover:border-[hsla(44,42%,62%,0.72)] hover:bg-white/[0.04]"
     >
-      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[hsla(42,34%,54%,0.5)] bg-black/45">
-        {src ? (
-          <img
-            src={src}
-            alt={`${watch.brand} ${watch.model}`}
-            draggable={false}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <Placeholder />
-        )}
-      </div>
+      <EditorialWatchImage src={src} alt={`${watch.brand} ${watch.model}`} variant="thumbnail" interactive />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-white/92">
           {watch.brand} {watch.model}
@@ -535,17 +621,7 @@ function WatchCard({
         aria-label={`View details for ${watch.brand} ${watch.model}`}
       >
         <div className="relative aspect-[4/3] w-full overflow-hidden">
-          {src ? (
-            <img
-              src={src}
-              alt={`${watch.brand} ${watch.model}`}
-              draggable={false}
-              className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.02]"
-            />
-          ) : (
-            <Placeholder />
-          )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/25" />
+          <EditorialWatchImage src={src} alt={`${watch.brand} ${watch.model}`} variant="card" interactive />
           {watch.isDemo ? (
             <span
               className={classNames(
@@ -644,17 +720,12 @@ function WatchDetailPanel({
         )}
       >
         <div className="relative max-h-[40vh] shrink-0 overflow-hidden bg-black/35 sm:max-h-[min(42vh,360px)]">
-          {src ? (
-            <img
-              src={src}
-              alt={`${watch.brand} ${watch.model}`}
-              className="h-full w-full max-h-[40vh] object-cover object-center sm:max-h-[360px]"
-            />
-          ) : (
-            <div className="aspect-[16/10] max-h-[40vh] sm:max-h-[360px]">
-              <Placeholder />
-            </div>
-          )}
+          <EditorialWatchImage
+            src={src}
+            alt={`${watch.brand} ${watch.model}`}
+            variant="detail"
+            className="aspect-[16/10] max-h-[40vh] sm:max-h-[360px]"
+          />
           <button
             type="button"
             onClick={onClose}
@@ -861,6 +932,17 @@ export default function Page() {
   const recentlyAddedWatches = useMemo(() => {
     return [...watches].sort((a, b) => b.createdAt - a.createdAt).slice(0, 4);
   }, [watches]);
+
+  const collectionCoverWatch = useMemo(() => {
+    return (
+      recentlyAddedWatches.find((w) => Boolean(resolvedPhotoUrls[w.id] ?? w.photoUrl)) ??
+      watches.find((w) => Boolean(resolvedPhotoUrls[w.id] ?? w.photoUrl))
+    );
+  }, [recentlyAddedWatches, resolvedPhotoUrls, watches]);
+
+  const collectionCoverImageSrc = collectionCoverWatch
+    ? (resolvedPhotoUrls[collectionCoverWatch.id] ?? collectionCoverWatch.photoUrl)
+    : undefined;
 
   const dashboardTotalValueNeedsData = watchesHydrated && watches.length > 0 && totalCollectionValue === 0;
   const dashboardTotalValueDisplay = !watchesHydrated
@@ -1664,6 +1746,15 @@ export default function Page() {
               </div>
             </div>
 
+            <div className="mt-6">
+              <VaultAtmospherePanel
+                watch={collectionCoverWatch}
+                imageSrc={collectionCoverImageSrc}
+                collectionLabel={watchesHydrated ? collectionLabel : "Loading collection"}
+                onAddWatch={goAddWatchFromClick}
+              />
+            </div>
+
             <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
               <DashboardMetricCard
                 label="Saved watches"
@@ -1849,21 +1940,13 @@ export default function Page() {
                 <div>
                   <h3 className="text-lg font-semibold tracking-tight text-white/90">Photos</h3>
                   <p className="mt-2 text-[13px] leading-relaxed text-white/55">
-                    Add a clear photo of the watch. You can change it anytime when editing.
+                    Add a clear photo of the watch. HoroLair uses it for restrained thumbnails and, when suitable, the
+                    optional vault atmosphere image.
                   </p>
                 </div>
                 <div className={classNames("overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
                   <div className="aspect-[4/3] p-4">
-                    {photoPreviewUrl ? (
-                      <img
-                        src={photoPreviewUrl}
-                        alt="Photo preview"
-                        draggable={false}
-                        className="h-full w-full rounded-xl object-cover"
-                      />
-                    ) : (
-                      <Placeholder />
-                    )}
+                    <EditorialWatchImage src={photoPreviewUrl} alt="Photo preview" variant="preview" />
                   </div>
                   <div className="border-t-2 border-[hsla(42,34%,40%,0.75)] p-4 sm:p-5">
                     <label className="grid gap-2.5">
