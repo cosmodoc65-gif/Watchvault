@@ -38,6 +38,17 @@ const features = [
   },
 ] as const;
 
+type ShowcaseWatch = {
+  category: string;
+  model: string;
+  detail: string;
+  note: string;
+  image: string;
+  imagePosition: string;
+  alt: string;
+  priority?: boolean;
+};
+
 const showcaseWatches = [
   {
     category: "Moonphase",
@@ -90,13 +101,13 @@ const showcaseWatches = [
     imagePosition: "50% 48%",
     alt: "Hamilton Khaki Field Officer field watch with legible military-style numerals.",
   },
-] as const;
+] satisfies readonly ShowcaseWatch[];
 
 function WatchShowcaseCard({
   watch,
   className,
 }: {
-  watch: (typeof showcaseWatches)[number];
+  watch: ShowcaseWatch;
   className?: string;
 }) {
   return (
@@ -113,7 +124,7 @@ function WatchShowcaseCard({
           alt={watch.alt}
           fill
           sizes="(min-width: 1024px) 190px, (min-width: 640px) 42vw, 92vw"
-          priority={watch.priority}
+          priority={watch.priority ?? false}
           className="object-cover transition duration-500 ease-out group-hover:scale-[1.035]"
           style={{ objectPosition: watch.imagePosition }}
         />
