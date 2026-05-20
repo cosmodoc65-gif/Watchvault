@@ -23,27 +23,63 @@ export const BOXPAPERS_LABELS: Record<WatchBoxPapers, string> = {
 
 export type CollectionCurrency = "GBP" | "EUR" | "USD" | "CHF" | "JPY";
 
+export type WatchTimelineEntryType = "purchased" | "serviced" | "regulated" | "strap_changed" | "sold" | "repaired";
+
+export type WatchTimelineEntry = {
+  id: string;
+  type: WatchTimelineEntryType;
+  date?: string;
+  note: string;
+  cost?: number;
+};
+
+export type WatchPhoto = {
+  id: string;
+  /** Preferred: blob stored in IndexedDB under this key */
+  storageKey?: string;
+  /** Legacy/data URL support */
+  url?: string;
+  caption?: string;
+  isPrimary?: boolean;
+  createdAt?: number;
+};
+
 export type Watch = {
   id: string;
   brand: string;
   model: string;
+  /** New canonical field. `reference` is retained below as a legacy alias. */
+  referenceNumber?: string;
   reference?: string;
   year?: string;
   serialNumber?: string;
   /** Case diameter or size notes, e.g. "40 mm" */
   caseSize?: string;
+  lugToLug?: string;
+  waterResistance?: string;
   /** Movement type or calibre notes */
   movement?: string;
   purchasePrice?: number;
+  /** New canonical field. `estimatedValue` is retained as a legacy alias. */
+  currentValue?: number;
   estimatedValue?: number;
   /** Free-form (e.g. YYYY-MM or "Spring 2019") */
   purchaseDate?: string;
+  purchaseSource?: string;
   /** Seller, AD, or provenance notes */
   seller?: string;
+  complicationStyle?: string;
   condition?: WatchCondition;
   boxPapers?: WatchBoxPapers;
+  serviceHistoryNotes?: string;
   serviceHistory?: string;
+  provenanceNotes?: string;
   notes?: string;
+  timeline?: WatchTimelineEntry[];
+  wearCount?: number;
+  lastWornDate?: string;
+  photos?: WatchPhoto[];
+  primaryPhotoId?: string;
   /** Legacy: inline data URL or remote URL */
   photoUrl?: string;
   /** Preferred: blob stored in IndexedDB under this key (usually watch id) */
@@ -87,6 +123,77 @@ function parseNumericField(v: unknown): number | undefined {
   return undefined;
 }
 
+function parseStringField(v: unknown): string | undefined {
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
+function isTimelineEntryType(v: unknown): v is WatchTimelineEntryType {
+  return (
+    v === "purchased" ||
+    v === "serviced" ||
+    v === "regulated" ||
+    v === "strap_changed" ||
+    v === "sold" ||
+    v === "repaired"
+  );
+}
+
+function normalizeTimeline(raw: unknown): WatchTimelineEntry[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: WatchTimelineEntry[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const note = parseStringField(r.note);
+    const type = isTimelineEntryType(r.type) ? r.type : undefined;
+    if (!note || !type) continue;
+    out.push({
+      id: parseStringField(r.id) ?? crypto.randomUUID(),
+      type,
+      date: parseStringField(r.date),
+      note,
+      cost: parseNumericField(r.cost),
+    });
+  }
+  return out.length ? out : undefined;
+}
+
+function normalizePhotos(raw: unknown, legacy: { photoStorageKey?: string; photoUrl?: string }): WatchPhoto[] | undefined {
+  const out: WatchPhoto[] = [];
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (!item || typeof item !== "object") continue;
+      const r = item as Record<string, unknown>;
+      const storageKey = parseStringField(r.storageKey);
+      const url = parseStringField(r.url);
+      if (!storageKey && !url) continue;
+      out.push({
+        id: parseStringField(r.id) ?? storageKey ?? crypto.randomUUID(),
+        storageKey,
+        url,
+        caption: parseStringField(r.caption),
+        isPrimary: typeof r.isPrimary === "boolean" ? r.isPrimary : undefined,
+        createdAt: typeof r.createdAt === "number" && Number.isFinite(r.createdAt) ? r.createdAt : undefined,
+      });
+    }
+  }
+  if (legacy.photoStorageKey || legacy.photoUrl) {
+    const legacyId = legacy.photoStorageKey ?? "legacy-primary";
+    if (!out.some((p) => p.storageKey === legacy.photoStorageKey || p.url === legacy.photoUrl)) {
+      out.unshift({
+        id: legacyId,
+        storageKey: legacy.photoStorageKey,
+        url: legacy.photoUrl,
+        isPrimary: true,
+      });
+    }
+  }
+  if (out.length && !out.some((p) => p.isPrimary)) {
+    out[0] = { ...out[0], isPrimary: true };
+  }
+  return out.length ? out : undefined;
+}
+
 /**
  * Coerce older localStorage shapes so `normalizeWatch` can succeed.
  * Does not remove unknown fields (normalizeWatch ignores them).
@@ -111,9 +218,21 @@ export function coerceLegacyWatchRecord(record: Record<string, unknown>, fallbac
   const pur = parseNumericField(w.purchasePrice);
   if (pur !== undefined) w.purchasePrice = pur;
 
+  const cur = parseNumericField(w.currentValue ?? w.estimatedValue);
+  if (cur !== undefined) {
+    w.currentValue = cur;
+    w.estimatedValue = cur;
+  }
+
   if (typeof w.brand !== "string" && w.brand != null) w.brand = String(w.brand);
   if (typeof w.model !== "string" && w.model != null) w.model = String(w.model);
   if (typeof w.id !== "string" && w.id != null) w.id = String(w.id);
+
+  if (typeof w.referenceNumber !== "string" && typeof w.reference === "string") w.referenceNumber = w.reference;
+  if (typeof w.purchaseSource !== "string" && typeof w.seller === "string") w.purchaseSource = w.seller;
+  if (typeof w.serviceHistoryNotes !== "string" && typeof w.serviceHistory === "string") {
+    w.serviceHistoryNotes = w.serviceHistory;
+  }
 
   return w;
 }
@@ -124,26 +243,48 @@ export function normalizeWatch(raw: unknown): Watch | null {
   if (typeof w.id !== "string" || typeof w.brand !== "string" || typeof w.model !== "string") return null;
   if (typeof w.createdAt !== "number" || !Number.isFinite(w.createdAt)) return null;
 
+  const photoUrl = typeof w.photoUrl === "string" ? w.photoUrl : undefined;
+  const photoStorageKey = typeof w.photoStorageKey === "string" ? w.photoStorageKey : undefined;
+  const referenceNumber = parseStringField(w.referenceNumber) ?? parseStringField(w.reference);
+  const currentValue = parseNumericField(w.currentValue ?? w.estimatedValue);
+  const purchaseSource = parseStringField(w.purchaseSource) ?? parseStringField(w.seller);
+  const serviceHistoryNotes = parseStringField(w.serviceHistoryNotes) ?? (typeof w.serviceHistory === "string" ? w.serviceHistory : undefined);
+  const photos = normalizePhotos(w.photos, { photoStorageKey, photoUrl });
+  const primaryPhotoId =
+    parseStringField(w.primaryPhotoId) ?? photos?.find((p) => p.isPrimary)?.id ?? photos?.[0]?.id ?? undefined;
+
   return {
     id: w.id,
     brand: w.brand,
     model: w.model,
-    reference: typeof w.reference === "string" ? w.reference : undefined,
+    referenceNumber,
+    reference: referenceNumber,
     year: typeof w.year === "string" ? w.year : undefined,
     serialNumber: typeof w.serialNumber === "string" ? w.serialNumber : undefined,
     caseSize: typeof w.caseSize === "string" && w.caseSize.trim() ? w.caseSize.trim() : undefined,
+    lugToLug: parseStringField(w.lugToLug),
+    waterResistance: parseStringField(w.waterResistance),
     movement: typeof w.movement === "string" && w.movement.trim() ? w.movement.trim() : undefined,
     purchasePrice: typeof w.purchasePrice === "number" && Number.isFinite(w.purchasePrice) ? w.purchasePrice : undefined,
-    estimatedValue:
-      typeof w.estimatedValue === "number" && Number.isFinite(w.estimatedValue) ? w.estimatedValue : undefined,
+    currentValue,
+    estimatedValue: currentValue,
     purchaseDate: typeof w.purchaseDate === "string" && w.purchaseDate.trim() ? w.purchaseDate.trim() : undefined,
-    seller: typeof w.seller === "string" && w.seller.trim() ? w.seller.trim() : undefined,
+    purchaseSource,
+    seller: purchaseSource,
+    complicationStyle: parseStringField(w.complicationStyle),
     condition: isWatchCondition(w.condition) ? w.condition : undefined,
     boxPapers: isWatchBoxPapers(w.boxPapers) ? w.boxPapers : undefined,
-    serviceHistory: typeof w.serviceHistory === "string" ? w.serviceHistory : undefined,
+    serviceHistoryNotes,
+    serviceHistory: serviceHistoryNotes,
+    provenanceNotes: parseStringField(w.provenanceNotes),
     notes: typeof w.notes === "string" ? w.notes : undefined,
-    photoUrl: typeof w.photoUrl === "string" ? w.photoUrl : undefined,
-    photoStorageKey: typeof w.photoStorageKey === "string" ? w.photoStorageKey : undefined,
+    timeline: normalizeTimeline(w.timeline),
+    wearCount: typeof w.wearCount === "number" && Number.isFinite(w.wearCount) ? Math.max(0, Math.trunc(w.wearCount)) : undefined,
+    lastWornDate: parseStringField(w.lastWornDate),
+    photos,
+    primaryPhotoId,
+    photoUrl,
+    photoStorageKey,
     isDemo: typeof w.isDemo === "boolean" ? w.isDemo : undefined,
     createdAt: w.createdAt,
   };
@@ -363,7 +504,7 @@ export type ParsedBackup = {
   exportedAt: string;
   collectionCurrency: CollectionCurrency;
   watches: Watch[];
-  embeddedPhotos: { watchId: string; base64: string }[];
+  embeddedPhotos: { watchId: string; photoId?: string; base64: string }[];
 };
 
 export function parseBackupJson(text: string): ParsedBackup | null {
@@ -372,20 +513,32 @@ export function parseBackupJson(text: string): ParsedBackup | null {
     if (!data || data.watchvaultBackup !== true || data.version !== 1) return null;
     if (!Array.isArray(data.watches)) return null;
     const watches: Watch[] = [];
-    const embeddedPhotos: { watchId: string; base64: string }[] = [];
+    const embeddedPhotos: { watchId: string; photoId?: string; base64: string }[] = [];
     for (const item of data.watches) {
       if (!item || typeof item !== "object") return null;
       const r = item as Record<string, unknown>;
       const b64 = typeof r.photoExportBase64 === "string" ? r.photoExportBase64 : undefined;
+      const b64List = Array.isArray(r.photoExportsBase64) ? r.photoExportsBase64 : [];
       const rest = { ...r };
       delete rest.photoExportBase64;
+      delete rest.photoExportsBase64;
       let nw = normalizeWatch(rest);
       if (!nw) {
         nw = normalizeWatch(coerceLegacyWatchRecord(rest, Date.now()));
       }
       if (!nw) return null;
       watches.push(nw);
-      if (b64) embeddedPhotos.push({ watchId: nw.id, base64: b64 });
+      if (b64 && b64List.length === 0) embeddedPhotos.push({ watchId: nw.id, base64: b64 });
+      for (const photo of b64List) {
+        if (!photo || typeof photo !== "object") continue;
+        const pr = photo as Record<string, unknown>;
+        if (typeof pr.base64 !== "string") continue;
+        embeddedPhotos.push({
+          watchId: nw.id,
+          photoId: typeof pr.photoId === "string" ? pr.photoId : undefined,
+          base64: pr.base64,
+        });
+      }
     }
     const cur = data.collectionCurrency;
     const currency =

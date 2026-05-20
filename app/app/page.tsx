@@ -18,7 +18,10 @@ import {
   type Watch,
   type WatchBoxPapers,
   type WatchCondition,
+  type WatchPhoto,
   type WatchStorageLoadIssue,
+  type WatchTimelineEntry,
+  type WatchTimelineEntryType,
   parseBackupJson,
   watchStorageIssueUserMessage,
 } from "@/lib/watchNormalize";
@@ -53,15 +56,32 @@ function getDemoWatches(): Watch[] {
       id: crypto.randomUUID(),
       brand: "Patek Philippe",
       model: "Calatrava",
+      referenceNumber: "5226G-001",
       reference: "5226G-001",
       year: "2023",
       serialNumber: "DEMO-PP-001",
       purchasePrice: 38000,
+      currentValue: 42000,
       estimatedValue: 42000,
+      purchaseDate: "2023-06",
+      purchaseSource: "Authorised dealer",
+      movement: "Automatic calibre 26-330",
+      caseSize: "40 mm",
+      lugToLug: "47 mm",
+      waterResistance: "30 m",
+      complicationStyle: "Dress",
       condition: "excellent",
       boxPapers: "full_set",
+      serviceHistoryNotes: "Demo sample — timing checked 2024.",
       serviceHistory: "Demo sample — timing checked 2024.",
+      provenanceNotes: "Demo provenance note.",
       notes: "Sample entry for the private beta. Clear demo watches anytime.",
+      timeline: [
+        { id: crypto.randomUUID(), type: "purchased", date: "2023-06", note: "Added as a full set demo purchase." },
+        { id: crypto.randomUUID(), type: "regulated", date: "2024-03", note: "Timing checked for the archive." },
+      ],
+      wearCount: 12,
+      lastWornDate: todayIsoDate(),
       createdAt: t - 5000,
       isDemo: true,
     },
@@ -69,13 +89,22 @@ function getDemoWatches(): Watch[] {
       id: crypto.randomUUID(),
       brand: "Rolex",
       model: "Submariner Date",
+      referenceNumber: "126610LN",
       reference: "126610LN",
       year: "2022",
+      currentValue: 11500,
       estimatedValue: 11500,
+      movement: "Automatic calibre 3235",
+      caseSize: "41 mm",
+      waterResistance: "300 m",
+      complicationStyle: "Diver",
       condition: "very_good",
       boxPapers: "full_set",
+      serviceHistoryNotes: "Demo — no real service history.",
       serviceHistory: "Demo — no real service history.",
       notes: "Demo sample.",
+      wearCount: 24,
+      lastWornDate: "2026-05-18",
       createdAt: t - 4000,
       isDemo: true,
     },
@@ -83,13 +112,20 @@ function getDemoWatches(): Watch[] {
       id: crypto.randomUUID(),
       brand: "Omega",
       model: "Speedmaster Professional",
+      referenceNumber: "310.30.42.50.01.001",
       reference: "310.30.42.50.01.001",
       year: "2021",
       purchasePrice: 5200,
+      currentValue: 5800,
       estimatedValue: 5800,
+      movement: "Manual-wind calibre 3861",
+      caseSize: "42 mm",
+      complicationStyle: "Chronograph",
       condition: "good",
       boxPapers: "box_only",
       notes: "Demo sample — moonwatch vibes.",
+      wearCount: 8,
+      lastWornDate: "2026-05-10",
       createdAt: t - 3000,
       isDemo: true,
     },
@@ -194,6 +230,64 @@ const ADD_WATCH_STEP_COUNT = 4;
 
 type MainNavView = "dashboard" | "add-watch" | "collection";
 type CollectionDisplayMode = "grid" | "compact";
+type CollectionFilter = "all" | "service" | "missing-values" | "most-worn";
+
+const TIMELINE_ENTRY_LABELS: Record<WatchTimelineEntryType, string> = {
+  purchased: "Purchased",
+  serviced: "Serviced",
+  regulated: "Regulated",
+  strap_changed: "Strap changed",
+  sold: "Sold",
+  repaired: "Repaired",
+};
+
+const TIMELINE_ENTRY_TYPES: WatchTimelineEntryType[] = [
+  "purchased",
+  "serviced",
+  "regulated",
+  "strap_changed",
+  "sold",
+  "repaired",
+];
+
+function getWatchReference(watch: Watch): string | undefined {
+  return watch.referenceNumber ?? watch.reference;
+}
+
+function getWatchCurrentValue(watch: Watch): number | undefined {
+  return watch.currentValue ?? watch.estimatedValue;
+}
+
+function getWatchPurchaseSource(watch: Watch): string | undefined {
+  return watch.purchaseSource ?? watch.seller;
+}
+
+function getWatchServiceNotes(watch: Watch): string | undefined {
+  return watch.serviceHistoryNotes ?? watch.serviceHistory;
+}
+
+function getPrimaryPhoto(watch: Watch): WatchPhoto | undefined {
+  return watch.photos?.find((p) => p.id === watch.primaryPhotoId) ?? watch.photos?.find((p) => p.isPrimary) ?? watch.photos?.[0];
+}
+
+function daysSinceDate(date?: string): number | undefined {
+  if (!date) return undefined;
+  const t = Date.parse(date);
+  if (!Number.isFinite(t)) return undefined;
+  return Math.max(0, Math.floor((Date.now() - t) / (24 * 60 * 60 * 1000)));
+}
+
+function formatDaysSinceLastWorn(date?: string): string {
+  const days = daysSinceDate(date);
+  if (days === undefined) return "Not tracked";
+  if (days === 0) return "Worn today";
+  if (days === 1) return "1 day ago";
+  return `${days} days ago`;
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 /** Horology-inspired mark: case + dial ring + twelve index + single hand — minimal, not illustrative. */
 function VaultMark({ className }: { className?: string }) {
@@ -508,12 +602,12 @@ function VaultAtmospherePanel({
 }) {
   const title = watch ? `${watch.brand} ${watch.model}` : "Your private vault";
   const subtitle = watch
-    ? [watch.reference ? `Ref. ${watch.reference}` : null, watch.year || null].filter(Boolean).join(" · ") || "Recently added"
+    ? [getWatchReference(watch) ? `Ref. ${getWatchReference(watch)}` : null, watch.year || null].filter(Boolean).join(" · ") || "Recently added"
     : "Add a watch photo to create an atmospheric collection cover.";
   const meta = watch
     ? [
         { label: "Brand", value: watch.brand },
-        { label: "Reference", value: watch.reference },
+        { label: "Reference", value: getWatchReference(watch) },
         { label: "Year", value: watch.year },
         { label: "Movement", value: watch.movement },
       ]
@@ -618,7 +712,7 @@ function DashboardRecentWatchRow({
 }) {
   const src = displaySrc ?? watch.photoUrl;
   const valueLabel =
-    typeof watch.estimatedValue === "number" ? formatCollectionCurrency(watch.estimatedValue, currency) : "Value not added";
+    typeof getWatchCurrentValue(watch) === "number" ? formatCollectionCurrency(getWatchCurrentValue(watch)!, currency) : "Value not added";
 
   return (
     <button
@@ -632,7 +726,7 @@ function DashboardRecentWatchRow({
           {watch.brand} {watch.model}
         </p>
         <p className="mt-1 truncate text-[12px] text-white/52">
-          {[watch.reference ? `Ref. ${watch.reference}` : null, watch.year || null].filter(Boolean).join(" · ") || "No reference added"}
+          {[getWatchReference(watch) ? `Ref. ${getWatchReference(watch)}` : null, watch.year || null].filter(Boolean).join(" · ") || "No reference added"}
         </p>
       </div>
       <p className="hidden shrink-0 text-right text-[12px] font-medium text-[hsla(44,42%,78%,0.86)] sm:block">{valueLabel}</p>
@@ -758,17 +852,17 @@ function WatchCard({
           </span>
         </div>
 
-        {(watch.reference ||
+        {(getWatchReference(watch) ||
           watch.year ||
-          typeof watch.estimatedValue === "number" ||
+          typeof getWatchCurrentValue(watch) === "number" ||
           watch.condition ||
           watch.boxPapers) && (
           <div className="mt-4 flex flex-wrap gap-2">
-            {watch.reference ? <span className={gold.tagSoft}>Ref. {watch.reference}</span> : null}
+            {getWatchReference(watch) ? <span className={gold.tagSoft}>Ref. {getWatchReference(watch)}</span> : null}
             {watch.year ? <span className={gold.tagSoft}>Year {watch.year}</span> : null}
             {watch.movement ? <span className={gold.tagSoft}>{watch.movement}</span> : null}
-            {typeof watch.estimatedValue === "number" ? (
-              <span className={gold.tagSoft}>Est. {formatCollectionCurrency(watch.estimatedValue, currency)}</span>
+            {typeof getWatchCurrentValue(watch) === "number" ? (
+              <span className={gold.tagSoft}>Est. {formatCollectionCurrency(getWatchCurrentValue(watch)!, currency)}</span>
             ) : null}
             {watch.condition ? <span className={gold.tagSoft}>{CONDITION_LABELS[watch.condition]}</span> : null}
             {watch.boxPapers ? <span className={gold.tagSoft}>{BOXPAPERS_LABELS[watch.boxPapers]}</span> : null}
@@ -820,7 +914,7 @@ function CompactWatchRow({
 }) {
   const src = displaySrc ?? watch.photoUrl;
   const meta = [
-    watch.reference ? `Ref. ${watch.reference}` : null,
+    getWatchReference(watch) ? `Ref. ${getWatchReference(watch)}` : null,
     watch.year || null,
     watch.movement || null,
     watch.condition ? CONDITION_LABELS[watch.condition] : null,
@@ -853,7 +947,7 @@ function CompactWatchRow({
         <div className="hidden min-w-[7rem] text-right sm:block">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Estimated</p>
           <p className="mt-1 text-sm font-medium text-[hsla(44,42%,78%,0.86)]">
-            {typeof watch.estimatedValue === "number" ? formatCollectionCurrency(watch.estimatedValue, currency) : "—"}
+            {typeof getWatchCurrentValue(watch) === "number" ? formatCollectionCurrency(getWatchCurrentValue(watch)!, currency) : "—"}
           </p>
         </div>
       </div>
@@ -875,17 +969,36 @@ function CompactWatchRow({
 function WatchDetailPanel({
   watch,
   displaySrc,
+  gallerySrcs,
   currency,
   onClose,
   onEdit,
+  onMarkWorn,
+  onAddTimelineEntry,
 }: {
   watch: Watch;
   displaySrc?: string;
+  gallerySrcs?: string[];
   currency: CollectionCurrency;
   onClose: () => void;
   onEdit: (w: Watch) => void;
+  onMarkWorn: (id: string) => void;
+  onAddTimelineEntry: (id: string, entry: WatchTimelineEntry) => void;
 }) {
   const src = displaySrc ?? watch.photoUrl;
+  const gallery = gallerySrcs?.length ? gallerySrcs : src ? [src] : [];
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [timelineType, setTimelineType] = useState<WatchTimelineEntryType>("serviced");
+  const [timelineDate, setTimelineDate] = useState(todayIsoDate());
+  const [timelineNote, setTimelineNote] = useState("");
+  const [timelineCost, setTimelineCost] = useState("");
+  const wearCount = watch.wearCount ?? 0;
+  const costPerWear =
+    typeof watch.purchasePrice === "number" && watch.purchasePrice > 0 && wearCount > 0 ? watch.purchasePrice / wearCount : undefined;
+
+  useEffect(() => {
+    setActiveGalleryIndex(0);
+  }, [watch.id, gallery.length]);
 
   return (
     <div
@@ -903,11 +1016,29 @@ function WatchDetailPanel({
       >
         <div className="relative max-h-[40vh] shrink-0 overflow-hidden bg-black/35 sm:max-h-[min(42vh,360px)]">
           <EditorialWatchImage
-            src={src}
+            src={gallery[activeGalleryIndex] ?? src}
             alt={`${watch.brand} ${watch.model}`}
             variant="detail"
             className="aspect-[16/10] max-h-[40vh] sm:max-h-[360px]"
           />
+          {gallery.length > 1 ? (
+            <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto">
+              {gallery.map((u, i) => (
+                <button
+                  key={`${u}-${i}`}
+                  type="button"
+                  onClick={() => setActiveGalleryIndex(i)}
+                  className={classNames(
+                    "h-12 w-16 shrink-0 overflow-hidden rounded-lg border bg-black/50 transition",
+                    activeGalleryIndex === i ? "border-[hsla(44,46%,72%,0.82)]" : "border-white/18 opacity-70 hover:opacity-95",
+                  )}
+                  aria-label={`Show photo ${i + 1}`}
+                >
+                  <img src={u} alt="" className="h-full w-full object-cover grayscale saturate-[0.42] brightness-[0.8]" />
+                </button>
+              ))}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={onClose}
@@ -930,11 +1061,35 @@ function WatchDetailPanel({
             {watch.isDemo ? <span className={gold.pill}>Demo sample</span> : null}
           </div>
 
+          <div className="mt-5 grid gap-2.5 rounded-2xl border border-[hsla(42,32%,52%,0.42)] bg-black/28 p-3 sm:grid-cols-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Wears</p>
+              <p className="mt-1 text-sm font-semibold text-white/88">{wearCount}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Last worn</p>
+              <p className="mt-1 text-sm font-semibold text-white/88">{formatDaysSinceLastWorn(watch.lastWornDate)}</p>
+            </div>
+            {costPerWear !== undefined ? (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Cost / wear</p>
+                <p className="mt-1 text-sm font-semibold text-white/88">{formatCollectionCurrency(costPerWear, currency)}</p>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onMarkWorn(watch.id)}
+              className={classNames("min-h-[42px] sm:col-span-3", gold.btnSmPrimary)}
+            >
+              Mark as worn today
+            </button>
+          </div>
+
           <dl className="mt-5 grid gap-3.5 text-[0.9375rem] leading-snug">
-            {watch.reference ? (
+            {getWatchReference(watch) ? (
               <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
                 <dt className="font-medium text-white/62">Reference</dt>
-                <dd className="text-right font-medium text-white/92">{watch.reference}</dd>
+                <dd className="text-right font-medium text-white/92">{getWatchReference(watch)}</dd>
               </div>
             ) : null}
             {watch.year ? (
@@ -955,6 +1110,18 @@ function WatchDetailPanel({
                 <dd className="text-right font-medium text-white/92">{watch.caseSize}</dd>
               </div>
             ) : null}
+            {watch.lugToLug ? (
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Lug-to-lug</dt>
+                <dd className="text-right font-medium text-white/92">{watch.lugToLug}</dd>
+              </div>
+            ) : null}
+            {watch.waterResistance ? (
+              <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Water resistance</dt>
+                <dd className="text-right font-medium text-white/92">{watch.waterResistance}</dd>
+              </div>
+            ) : null}
             {watch.movement ? (
               <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
                 <dt className="font-medium text-white/62">Movement</dt>
@@ -969,11 +1136,11 @@ function WatchDetailPanel({
                 </dd>
               </div>
             ) : null}
-            {typeof watch.estimatedValue === "number" ? (
+            {typeof getWatchCurrentValue(watch) === "number" ? (
               <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
-                <dt className="font-medium text-white/62">Estimated value</dt>
+                <dt className="font-medium text-white/62">Current value</dt>
                 <dd className="text-right font-medium text-white/92">
-                  {formatCollectionCurrency(watch.estimatedValue, currency)}
+                  {formatCollectionCurrency(getWatchCurrentValue(watch)!, currency)}
                 </dd>
               </div>
             ) : null}
@@ -983,10 +1150,10 @@ function WatchDetailPanel({
                 <dd className="text-right font-medium text-white/92">{watch.purchaseDate}</dd>
               </div>
             ) : null}
-            {watch.seller ? (
+            {getWatchPurchaseSource(watch) ? (
               <div className="flex flex-wrap justify-between gap-2 border-b border-white/12 pb-2.5">
                 <dt className="font-medium text-white/62">Seller / source</dt>
-                <dd className="text-right font-medium text-white/92">{watch.seller}</dd>
+                <dd className="text-right font-medium text-white/92">{getWatchPurchaseSource(watch)}</dd>
               </div>
             ) : null}
             {watch.condition ? (
@@ -1001,10 +1168,16 @@ function WatchDetailPanel({
                 <dd className="text-right font-medium text-white/92">{BOXPAPERS_LABELS[watch.boxPapers]}</dd>
               </div>
             ) : null}
-            {watch.serviceHistory ? (
+            {getWatchServiceNotes(watch) ? (
               <div className="grid gap-1.5 border-b border-white/12 pb-2.5">
                 <dt className="font-medium text-white/62">Service history</dt>
-                <dd className="whitespace-pre-wrap font-normal leading-relaxed text-white/88">{watch.serviceHistory}</dd>
+                <dd className="whitespace-pre-wrap font-normal leading-relaxed text-white/88">{getWatchServiceNotes(watch)}</dd>
+              </div>
+            ) : null}
+            {watch.provenanceNotes ? (
+              <div className="grid gap-1.5 border-b border-white/12 pb-2.5">
+                <dt className="font-medium text-white/62">Provenance</dt>
+                <dd className="whitespace-pre-wrap font-normal leading-relaxed text-white/88">{watch.provenanceNotes}</dd>
               </div>
             ) : null}
             {watch.notes ? (
@@ -1014,6 +1187,96 @@ function WatchDetailPanel({
               </div>
             ) : null}
           </dl>
+
+          <div className="mt-7 rounded-2xl border border-[hsla(42,32%,52%,0.42)] bg-black/24 p-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,40%,74%,0.78)]">
+                  Ownership journal
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-white/48">Service, provenance, and ownership moments.</p>
+              </div>
+            </div>
+            {watch.timeline?.length ? (
+              <ol className="mt-4 grid gap-3">
+                {[...watch.timeline]
+                  .sort((a, b) => (Date.parse(b.date ?? "") || 0) - (Date.parse(a.date ?? "") || 0))
+                  .map((entry) => (
+                    <li key={entry.id} className="border-l border-[hsla(42,34%,54%,0.4)] pl-3">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-semibold text-white/88">{TIMELINE_ENTRY_LABELS[entry.type]}</p>
+                        <p className="text-[11px] text-white/42">{entry.date || "Undated"}</p>
+                      </div>
+                      <p className="mt-1 text-[12px] leading-relaxed text-white/58">{entry.note}</p>
+                      {typeof entry.cost === "number" ? (
+                        <p className="mt-1 text-[11px] text-[hsla(44,42%,78%,0.76)]">
+                          Cost {formatCollectionCurrency(entry.cost, currency)}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+              </ol>
+            ) : (
+              <p className="mt-4 rounded-xl border border-dashed border-[hsla(42,30%,48%,0.45)] bg-black/22 px-3 py-3 text-[12px] leading-relaxed text-white/48">
+                No journal entries yet. Add purchase, service, regulation, strap, repair, or sale notes as the watch lives
+                with you.
+              </p>
+            )}
+            <div className="mt-4 grid gap-2.5">
+              <div className="grid gap-2 sm:grid-cols-[0.8fr_0.8fr_1fr]">
+                <select
+                  value={timelineType}
+                  onChange={(e) => setTimelineType(e.target.value as WatchTimelineEntryType)}
+                  className={classNames(gold.input, gold.focus, "min-h-[44px] py-2 text-[13px]")}
+                >
+                  {TIMELINE_ENTRY_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {TIMELINE_ENTRY_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={timelineDate}
+                  onChange={(e) => setTimelineDate(e.target.value)}
+                  className={classNames(gold.input, gold.focus, "min-h-[44px] py-2 text-[13px]")}
+                  placeholder="YYYY-MM-DD"
+                />
+                <input
+                  value={timelineCost}
+                  onChange={(e) => setTimelineCost(e.target.value)}
+                  className={classNames(gold.input, gold.focus, "min-h-[44px] py-2 text-[13px]")}
+                  placeholder="Cost (optional)"
+                  inputMode="numeric"
+                />
+              </div>
+              <textarea
+                value={timelineNote}
+                onChange={(e) => setTimelineNote(e.target.value)}
+                className={classNames("min-h-[76px] resize-y", gold.input, gold.focus)}
+                placeholder="Short archival note..."
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const note = timelineNote.trim();
+                  if (!note) return;
+                  const parsedCost = Number(timelineCost.replace(/[^\d]/g, ""));
+                  onAddTimelineEntry(watch.id, {
+                    id: crypto.randomUUID(),
+                    type: timelineType,
+                    date: timelineDate.trim() || undefined,
+                    note,
+                    cost: Number.isFinite(parsedCost) && parsedCost > 0 ? parsedCost : undefined,
+                  });
+                  setTimelineNote("");
+                  setTimelineCost("");
+                }}
+                className={classNames("min-h-[44px]", gold.btnSmSecondary)}
+              >
+                Add journal entry
+              </button>
+            </div>
+          </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
             <button
@@ -1041,14 +1304,18 @@ export default function Page() {
   const [collectionCurrency, setCollectionCurrency] = useState<CollectionCurrency>(DEFAULT_CURRENCY);
 
   const [resolvedPhotoUrls, setResolvedPhotoUrls] = useState<Record<string, string>>({});
+  const [resolvedPhotoGalleryUrls, setResolvedPhotoGalleryUrls] = useState<Record<string, string[]>>({});
   const resolvedPhotoUrlsRef = useRef(resolvedPhotoUrls);
+  const resolvedPhotoGalleryUrlsRef = useRef(resolvedPhotoGalleryUrls);
   resolvedPhotoUrlsRef.current = resolvedPhotoUrls;
+  resolvedPhotoGalleryUrlsRef.current = resolvedPhotoGalleryUrls;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [detailWatch, setDetailWatch] = useState<Watch | null>(null);
   const [importPreview, setImportPreview] = useState<ParsedBackup | null>(null);
   const [photoRemoveRequested, setPhotoRemoveRequested] = useState(false);
 
   const pendingPhotoBlobRef = useRef<Blob | null>(null);
+  const pendingPhotoBlobsRef = useRef<Blob[]>([]);
   const backupImportRef = useRef<HTMLInputElement>(null);
   const [backupReminderDays, setBackupReminderDays] = useState<0 | 7 | 30>(0);
   const [lastBackupExportedAt, setLastBackupExportedAt] = useState<number | null>(null);
@@ -1092,11 +1359,21 @@ export default function Page() {
   const [serviceHistory, setServiceHistory] = useState("");
   const [notes, setNotes] = useState("");
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(undefined);
+  const [photoGalleryPreviewUrls, setPhotoGalleryPreviewUrls] = useState<string[]>([]);
+  const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState(0);
   const [caseSizeStr, setCaseSizeStr] = useState("");
   const [movementStr, setMovementStr] = useState("");
+  const [lugToLugStr, setLugToLugStr] = useState("");
+  const [waterResistanceStr, setWaterResistanceStr] = useState("");
+  const [complicationStyleStr, setComplicationStyleStr] = useState("");
   const [purchaseDateStr, setPurchaseDateStr] = useState("");
   const [sellerStr, setSellerStr] = useState("");
+  const [provenanceNotesStr, setProvenanceNotesStr] = useState("");
   const [addWatchStep, setAddWatchStep] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [styleFilter, setStyleFilter] = useState("all");
+  const [collectionFilter, setCollectionFilter] = useState<CollectionFilter>("all");
 
   const collectionLabel = useMemo(() => {
     if (watches.length === 0) return "No watches yet";
@@ -1105,11 +1382,11 @@ export default function Page() {
   }, [watches.length]);
 
   const totalCollectionValue = useMemo(() => {
-    return watches.reduce((sum, w) => sum + (typeof w.estimatedValue === "number" ? w.estimatedValue : 0), 0);
+    return watches.reduce((sum, w) => sum + (getWatchCurrentValue(w) ?? 0), 0);
   }, [watches]);
 
   const watchesMissingValueData = useMemo(() => {
-    return watches.filter((w) => typeof w.purchasePrice !== "number" || typeof w.estimatedValue !== "number").length;
+    return watches.filter((w) => typeof w.purchasePrice !== "number" || typeof getWatchCurrentValue(w) !== "number").length;
   }, [watches]);
 
   const recentlyAddedWatches = useMemo(() => {
@@ -1145,7 +1422,7 @@ export default function Page() {
 
   const estimatedFieldLabel = useMemo(() => {
     const entry = CURRENCIES.find((c) => c.code === collectionCurrency);
-    return `Estimated value (${entry?.label ?? collectionCurrency})`;
+    return `Current value (${entry?.label ?? collectionCurrency})`;
   }, [collectionCurrency]);
 
   const mostCommonBrand = useMemo(() => {
@@ -1166,6 +1443,53 @@ export default function Page() {
     }
     return best;
   }, [watches]);
+
+  const brandsRepresented = useMemo(() => {
+    return new Set(watches.map((w) => w.brand.trim()).filter(Boolean)).size;
+  }, [watches]);
+
+  const mostWornWatch = useMemo(() => {
+    return watches.reduce<Watch | undefined>((best, watch) => {
+      if (!best) return watch;
+      return (watch.wearCount ?? 0) > (best.wearCount ?? 0) ? watch : best;
+    }, undefined);
+  }, [watches]);
+
+  const newestAddition = useMemo(() => {
+    return watches.reduce<Watch | undefined>((best, watch) => {
+      if (!best) return watch;
+      return watch.createdAt > best.createdAt ? watch : best;
+    }, undefined);
+  }, [watches]);
+
+  const watchesWithCurrentValue = useMemo(() => watches.filter((w) => typeof getWatchCurrentValue(w) === "number"), [watches]);
+  const averageCollectionValue = useMemo(() => {
+    if (watchesWithCurrentValue.length === 0) return undefined;
+    return watchesWithCurrentValue.reduce((sum, w) => sum + (getWatchCurrentValue(w) ?? 0), 0) / watchesWithCurrentValue.length;
+  }, [watchesWithCurrentValue]);
+
+  const brandFilterOptions = useMemo(() => [...new Set(watches.map((w) => w.brand).filter(Boolean))].sort(), [watches]);
+  const styleFilterOptions = useMemo(
+    () => [...new Set(watches.map((w) => w.complicationStyle).filter((v): v is string => Boolean(v)))].sort(),
+    [watches],
+  );
+
+  const filteredWatches = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    let list = watches.filter((watch) => {
+      const haystack = [watch.brand, watch.model, getWatchReference(watch), watch.complicationStyle].filter(Boolean).join(" ").toLowerCase();
+      if (q && !haystack.includes(q)) return false;
+      if (brandFilter !== "all" && watch.brand !== brandFilter) return false;
+      if (styleFilter !== "all" && watch.complicationStyle !== styleFilter) return false;
+      if (collectionFilter === "service" && !getWatchServiceNotes(watch) && !watch.timeline?.some((e) => e.type === "serviced")) return false;
+      if (collectionFilter === "missing-values" && typeof watch.purchasePrice === "number" && typeof getWatchCurrentValue(watch) === "number") return false;
+      return true;
+    });
+    if (collectionFilter === "most-worn") {
+      list = [...list].sort((a, b) => (b.wearCount ?? 0) - (a.wearCount ?? 0));
+    }
+    return list;
+  }, [brandFilter, collectionFilter, searchQuery, styleFilter, watches]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1302,17 +1626,49 @@ export default function Page() {
 
     (async () => {
       const next: Record<string, string> = {};
+      const galleryNext: Record<string, string[]> = {};
       for (const w of watches) {
-        if (!w.photoStorageKey) continue;
-        try {
-          const blob = await getWatchImageBlob(w.photoStorageKey);
-          if (!blob || cancelled) continue;
-          const u = URL.createObjectURL(blob);
-          created.push(u);
-          next[w.id] = u;
-        } catch {
-          /* missing blob */
+        const photos = w.photos?.length
+          ? w.photos
+          : w.photoStorageKey || w.photoUrl
+            ? [{ id: "legacy-primary", storageKey: w.photoStorageKey, url: w.photoUrl, isPrimary: true }]
+            : [];
+        const gallery: string[] = [];
+        for (const photo of photos) {
+          if (photo.storageKey) {
+            try {
+              const blob = await getWatchImageBlob(photo.storageKey);
+              if (!blob || cancelled) continue;
+              const u = URL.createObjectURL(blob);
+              created.push(u);
+              gallery.push(u);
+              const primary = photo.id === w.primaryPhotoId || photo.isPrimary;
+              if (primary || !next[w.id]) next[w.id] = u;
+            } catch {
+              /* missing blob */
+            }
+          } else if (photo.url) {
+            gallery.push(photo.url);
+            const primary = photo.id === w.primaryPhotoId || photo.isPrimary;
+            if (primary || !next[w.id]) next[w.id] = photo.url;
+          }
         }
+        if (!next[w.id] && w.photoStorageKey) {
+          try {
+            const blob = await getWatchImageBlob(w.photoStorageKey);
+            if (!blob || cancelled) continue;
+            const u = URL.createObjectURL(blob);
+            created.push(u);
+            next[w.id] = u;
+            gallery.push(u);
+          } catch {
+            /* missing blob */
+          }
+        } else if (!next[w.id] && w.photoUrl) {
+          next[w.id] = w.photoUrl;
+          gallery.push(w.photoUrl);
+        }
+        if (gallery.length) galleryNext[w.id] = gallery;
       }
       if (cancelled) {
         created.forEach((u) => URL.revokeObjectURL(u));
@@ -1321,6 +1677,14 @@ export default function Page() {
       setResolvedPhotoUrls((prev) => {
         for (const u of Object.values(prev)) URL.revokeObjectURL(u);
         return next;
+      });
+      setResolvedPhotoGalleryUrls((prev) => {
+        for (const list of Object.values(prev)) {
+          for (const u of list) {
+            if (u.startsWith("blob:")) URL.revokeObjectURL(u);
+          }
+        }
+        return galleryNext;
       });
     })();
 
@@ -1332,6 +1696,11 @@ export default function Page() {
   useEffect(() => {
     return () => {
       for (const u of Object.values(resolvedPhotoUrlsRef.current)) URL.revokeObjectURL(u);
+      for (const list of Object.values(resolvedPhotoGalleryUrlsRef.current)) {
+        for (const u of list) {
+          if (u.startsWith("blob:")) URL.revokeObjectURL(u);
+        }
+      }
     };
   }, []);
 
@@ -1341,28 +1710,54 @@ export default function Page() {
     return () => window.clearTimeout(t);
   }, [toastMessage]);
 
-  const onPickPhoto = useCallback(async (file: File | null) => {
+  const clearPhotoPreviews = useCallback(() => {
+    pendingPhotoBlobRef.current = null;
+    pendingPhotoBlobsRef.current = [];
+    setPhotoPreviewUrl((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return undefined;
+    });
+    setPhotoGalleryPreviewUrls((prev) => {
+      for (const u of prev) {
+        if (u.startsWith("blob:")) URL.revokeObjectURL(u);
+      }
+      return [];
+    });
+    setPrimaryPhotoIndex(0);
+  }, []);
+
+  const onPickPhotos = useCallback(async (files: FileList | File[] | null) => {
     setPhotoRemoveRequested(false);
-    if (!file) {
-      pendingPhotoBlobRef.current = null;
-      setPhotoPreviewUrl((prev) => {
-        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return undefined;
-      });
+    const list = files ? Array.from(files).slice(0, 6) : [];
+    if (list.length === 0) {
+      clearPhotoPreviews();
       return;
     }
     try {
-      const blob = await compressImageFile(file);
-      pendingPhotoBlobRef.current = blob;
+      const blobs = await Promise.all(list.map((file) => compressImageFile(file)));
+      pendingPhotoBlobRef.current = blobs[0] ?? null;
+      pendingPhotoBlobsRef.current = blobs;
+      const urls = blobs.map((blob) => URL.createObjectURL(blob));
       setPhotoPreviewUrl((prev) => {
         if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(blob);
+        return urls[0];
       });
+      setPhotoGalleryPreviewUrls((prev) => {
+        for (const u of prev) {
+          if (u.startsWith("blob:")) URL.revokeObjectURL(u);
+        }
+        return urls;
+      });
+      setPrimaryPhotoIndex(0);
       trackLocalUsage("imageUploads");
     } catch {
       setToastMessage("Could not process that image. Try another file or format.");
     }
-  }, [trackLocalUsage]);
+  }, [clearPhotoPreviews, trackLocalUsage]);
+
+  const onPickPhoto = useCallback((file: File | null) => {
+    void onPickPhotos(file ? [file] : null);
+  }, [onPickPhotos]);
 
   const resetForm = useCallback(() => {
     setBrand("");
@@ -1378,17 +1773,17 @@ export default function Page() {
     setNotes("");
     setCaseSizeStr("");
     setMovementStr("");
+    setLugToLugStr("");
+    setWaterResistanceStr("");
+    setComplicationStyleStr("");
     setPurchaseDateStr("");
     setSellerStr("");
+    setProvenanceNotesStr("");
     setAddWatchStep(1);
     setPhotoRemoveRequested(false);
-    pendingPhotoBlobRef.current = null;
-    setPhotoPreviewUrl((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return undefined;
-    });
+    clearPhotoPreviews();
     setEditingWatchId(null);
-  }, []);
+  }, [clearPhotoPreviews]);
 
   const onAddWatch = useCallback(
     async (e: React.FormEvent) => {
@@ -1410,18 +1805,26 @@ export default function Page() {
       const baseFields = {
         brand: trimmedBrand,
         model: trimmedModel,
+        referenceNumber: reference.trim() || undefined,
         reference: reference.trim() || undefined,
         year: year.trim() || undefined,
         serialNumber: serialNumber.trim() || undefined,
         caseSize: caseSizeStr.trim() || undefined,
+        lugToLug: lugToLugStr.trim() || undefined,
+        waterResistance: waterResistanceStr.trim() || undefined,
         movement: movementStr.trim() || undefined,
         purchasePrice,
+        currentValue: normalizedEstimatedValue,
         estimatedValue: normalizedEstimatedValue,
         purchaseDate: purchaseDateStr.trim() || undefined,
+        purchaseSource: sellerStr.trim() || undefined,
         seller: sellerStr.trim() || undefined,
+        complicationStyle: complicationStyleStr.trim() || undefined,
         condition: condition || undefined,
         boxPapers: boxPapers || undefined,
+        serviceHistoryNotes: serviceHistory.trim() || undefined,
         serviceHistory: serviceHistory.trim() || undefined,
+        provenanceNotes: provenanceNotesStr.trim() || undefined,
         notes: notes.trim() || undefined,
       };
 
@@ -1445,6 +1848,37 @@ export default function Page() {
         }
       };
 
+      const saveNewPhotosToId = async (watchId: string): Promise<{ photos?: WatchPhoto[]; primaryPhotoId?: string; photoStorageKey?: string; photoUrl?: string }> => {
+        const blobs = pendingPhotoBlobsRef.current.length ? pendingPhotoBlobsRef.current : pendingPhotoBlobRef.current ? [pendingPhotoBlobRef.current] : [];
+        if (blobs.length === 0) return {};
+        const photos: WatchPhoto[] = [];
+        const primaryIndex = Math.min(primaryPhotoIndex, Math.max(0, blobs.length - 1));
+        for (let i = 0; i < blobs.length; i++) {
+          const photoId = i === 0 ? "primary" : crypto.randomUUID();
+          const isPrimary = i === primaryIndex;
+          const storageKey = isPrimary ? watchId : `${watchId}-photo-${photoId}`;
+          try {
+            await saveWatchImage(storageKey, blobs[i]);
+            photos.push({
+              id: photoId,
+              storageKey,
+              isPrimary,
+              createdAt: Date.now() + i,
+            });
+          } catch {
+            setToastMessage("One or more photos could not be saved — storage may be full.");
+          }
+        }
+        pendingPhotoBlobRef.current = null;
+        pendingPhotoBlobsRef.current = [];
+        return {
+          photos: photos.length ? photos : undefined,
+          primaryPhotoId: photos.find((p) => p.isPrimary)?.id ?? photos[0]?.id,
+          photoStorageKey: photos.find((p) => p.isPrimary)?.storageKey ?? photos[0]?.storageKey,
+          photoUrl: undefined,
+        };
+      };
+
       if (editingWatchId) {
         const existing = watches.find((w) => w.id === editingWatchId);
         if (!existing) return;
@@ -1452,20 +1886,35 @@ export default function Page() {
         let photoUrl: string | undefined = existing.photoUrl;
         let photoStorageKey: string | undefined = existing.photoStorageKey;
 
+        let photos: WatchPhoto[] | undefined = existing.photos;
+        let primaryPhotoId: string | undefined = existing.primaryPhotoId;
+
         if (photoRemoveRequested) {
           if (existing.photoStorageKey) await deleteWatchImage(existing.photoStorageKey).catch(() => {});
+          for (const p of existing.photos ?? []) {
+            if (p.storageKey) await deleteWatchImage(p.storageKey).catch(() => {});
+          }
           photoUrl = undefined;
           photoStorageKey = undefined;
-        } else if (pendingPhotoBlobRef.current) {
+          photos = undefined;
+          primaryPhotoId = undefined;
+        } else if (pendingPhotoBlobsRef.current.length || pendingPhotoBlobRef.current) {
           if (existing.photoStorageKey) await deleteWatchImage(existing.photoStorageKey).catch(() => {});
-          const saved = await saveNewPhotoToId(editingWatchId);
+          for (const p of existing.photos ?? []) {
+            if (p.storageKey) await deleteWatchImage(p.storageKey).catch(() => {});
+          }
+          const saved = await saveNewPhotosToId(editingWatchId);
           photoUrl = saved.photoUrl;
           photoStorageKey = saved.photoStorageKey;
+          photos = saved.photos;
+          primaryPhotoId = saved.primaryPhotoId;
         } else if (photoPreviewUrl?.startsWith("blob:")) {
           /* loaded IDB preview only — keep stored image */
         } else if (photoPreviewUrl?.startsWith("data:")) {
           photoUrl = photoPreviewUrl;
           photoStorageKey = undefined;
+          photos = [{ id: "primary", url: photoPreviewUrl, isPrimary: true }];
+          primaryPhotoId = "primary";
         }
 
         setWatches((prev) =>
@@ -1476,6 +1925,8 @@ export default function Page() {
                   ...baseFields,
                   photoUrl,
                   photoStorageKey,
+                  photos,
+                  primaryPhotoId,
                 }
               : w,
           ),
@@ -1485,13 +1936,18 @@ export default function Page() {
         let photoUrl: string | undefined;
         let photoStorageKey: string | undefined;
 
+        let photos: WatchPhoto[] | undefined;
+        let primaryPhotoId: string | undefined;
+
         if (photoRemoveRequested) {
           photoUrl = undefined;
           photoStorageKey = undefined;
         } else {
-          const saved = await saveNewPhotoToId(id);
+          const saved = await saveNewPhotosToId(id);
           photoStorageKey = saved.photoStorageKey;
           photoUrl = saved.photoUrl;
+          photos = saved.photos;
+          primaryPhotoId = saved.primaryPhotoId;
         }
 
         const watch: Watch = {
@@ -1499,6 +1955,19 @@ export default function Page() {
           ...baseFields,
           photoUrl,
           photoStorageKey,
+          photos,
+          primaryPhotoId,
+          timeline: purchaseDateStr.trim()
+            ? [
+                {
+                  id: crypto.randomUUID(),
+                  type: "purchased",
+                  date: purchaseDateStr.trim(),
+                  note: sellerStr.trim() ? `Purchased from ${sellerStr.trim()}.` : "Purchase recorded.",
+                  cost: purchasePrice,
+                },
+              ]
+            : undefined,
           createdAt: Date.now(),
         };
 
@@ -1525,9 +1994,14 @@ export default function Page() {
       notes,
       caseSizeStr,
       movementStr,
+      lugToLugStr,
+      waterResistanceStr,
+      complicationStyleStr,
       purchaseDateStr,
       sellerStr,
+      provenanceNotesStr,
       photoPreviewUrl,
+      primaryPhotoIndex,
       photoRemoveRequested,
       editingWatchId,
       watches,
@@ -1541,32 +2015,79 @@ export default function Page() {
   const onDeleteWatch = useCallback(async (id: string) => {
     const w = watches.find((x) => x.id === id);
     if (w?.photoStorageKey) await deleteWatchImage(w.photoStorageKey).catch(() => {});
+    for (const p of w?.photos ?? []) {
+      if (p.storageKey) await deleteWatchImage(p.storageKey).catch(() => {});
+    }
     setWatches((prev) => prev.filter((x) => x.id !== id));
     setEditingWatchId((cur) => (cur === id ? null : cur));
     setDetailWatch((cur) => (cur?.id === id ? null : cur));
   }, [watches]);
 
+  const onMarkWorn = useCallback((id: string) => {
+    setWatches((prev) =>
+      prev.map((watch) =>
+        watch.id === id
+          ? {
+              ...watch,
+              wearCount: (watch.wearCount ?? 0) + 1,
+              lastWornDate: todayIsoDate(),
+            }
+          : watch,
+      ),
+    );
+    setDetailWatch((cur) =>
+      cur?.id === id
+        ? {
+            ...cur,
+            wearCount: (cur.wearCount ?? 0) + 1,
+            lastWornDate: todayIsoDate(),
+          }
+        : cur,
+    );
+    setToastMessage("Marked as worn today.");
+  }, []);
+
+  const onAddTimelineEntry = useCallback((id: string, entry: WatchTimelineEntry) => {
+    setWatches((prev) =>
+      prev.map((watch) =>
+        watch.id === id
+          ? {
+              ...watch,
+              timeline: [entry, ...(watch.timeline ?? [])],
+            }
+          : watch,
+      ),
+    );
+    setDetailWatch((cur) => (cur?.id === id ? { ...cur, timeline: [entry, ...(cur.timeline ?? [])] } : cur));
+    setToastMessage("Journal entry added.");
+  }, []);
+
   const onStartEdit = useCallback(
     async (watch: Watch) => {
       setPhotoRemoveRequested(false);
       pendingPhotoBlobRef.current = null;
+      pendingPhotoBlobsRef.current = [];
       setEditingWatchId(watch.id);
       setAddWatchStep(1);
       setBrand(watch.brand ?? "");
       setModel(watch.model ?? "");
-      setReference(watch.reference ?? "");
+      setReference(getWatchReference(watch) ?? "");
       setYear(watch.year ?? "");
       setSerialNumber(watch.serialNumber ?? "");
       setPurchasePriceStr(typeof watch.purchasePrice === "number" ? String(watch.purchasePrice) : "");
-      setEstimatedValue(typeof watch.estimatedValue === "number" ? String(watch.estimatedValue) : "");
+      setEstimatedValue(typeof getWatchCurrentValue(watch) === "number" ? String(getWatchCurrentValue(watch)) : "");
       setCondition(watch.condition ?? "");
       setBoxPapers(watch.boxPapers ?? "");
-      setServiceHistory(watch.serviceHistory ?? "");
+      setServiceHistory(getWatchServiceNotes(watch) ?? "");
       setNotes(watch.notes ?? "");
       setCaseSizeStr(watch.caseSize ?? "");
       setMovementStr(watch.movement ?? "");
+      setLugToLugStr(watch.lugToLug ?? "");
+      setWaterResistanceStr(watch.waterResistance ?? "");
+      setComplicationStyleStr(watch.complicationStyle ?? "");
       setPurchaseDateStr(watch.purchaseDate ?? "");
-      setSellerStr(watch.seller ?? "");
+      setSellerStr(getWatchPurchaseSource(watch) ?? "");
+      setProvenanceNotesStr(watch.provenanceNotes ?? "");
 
       setPhotoPreviewUrl((prev) => {
         if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -1583,12 +2104,13 @@ export default function Page() {
       } else if (watch.photoUrl) {
         setPhotoPreviewUrl(watch.photoUrl);
       }
+      setPhotoGalleryPreviewUrls(resolvedPhotoGalleryUrls[watch.id] ?? []);
 
       requestAnimationFrame(() => {
         goMainView("add-watch");
       });
     },
-    [goMainView],
+    [goMainView, resolvedPhotoGalleryUrls],
   );
 
   const onCancelEdit = useCallback(() => {
@@ -1609,15 +2131,38 @@ export default function Page() {
   }, []);
 
   const persistImportedPhotos = useCallback(
-    async (list: Watch[], photos: { watchId: string; base64: string }[]) => {
-      const withPhoto = new Set(photos.map((p) => p.watchId));
+    async (list: Watch[], photos: { watchId: string; photoId?: string; base64: string }[]) => {
+      const byWatch = new Map<string, { photoId?: string; base64: string }[]>();
+      for (const ep of photos) {
+        const group = byWatch.get(ep.watchId) ?? [];
+        group.push({ photoId: ep.photoId, base64: ep.base64 });
+        byWatch.set(ep.watchId, group);
+      }
       for (const ep of photos) {
         const blob = base64ToBlob(ep.base64);
-        await saveWatchImage(ep.watchId, blob);
+        const storageKey = ep.photoId ? `${ep.watchId}-photo-${ep.photoId}` : ep.watchId;
+        await saveWatchImage(storageKey, blob);
       }
-      return list.map((w) =>
-        withPhoto.has(w.id) ? { ...w, photoStorageKey: w.id, photoUrl: undefined } : w,
-      );
+      return list.map((w) => {
+        const group = byWatch.get(w.id);
+        if (!group?.length) return w;
+        const importedPhotos: WatchPhoto[] = group.map((photo, index) => {
+          const photoId = photo.photoId ?? (index === 0 ? "primary" : crypto.randomUUID());
+          return {
+            id: photoId,
+            storageKey: photo.photoId ? `${w.id}-photo-${photoId}` : w.id,
+            isPrimary: index === 0,
+            createdAt: Date.now() + index,
+          };
+        });
+        return {
+          ...w,
+          photos: importedPhotos,
+          primaryPhotoId: importedPhotos[0]?.id,
+          photoStorageKey: importedPhotos[0]?.storageKey,
+          photoUrl: undefined,
+        };
+      });
     },
     [],
   );
@@ -1629,12 +2174,18 @@ export default function Page() {
           const withBlobs = await persistImportedPhotos(parsed.watches, parsed.embeddedPhotos);
           const byId = new Map(withBlobs.map((w) => [w.id, w]));
           for (const ow of watches) {
-            if (!ow.photoStorageKey) continue;
-            const nw = byId.get(ow.id);
-            if (!nw?.photoStorageKey) {
-              await deleteWatchImage(ow.photoStorageKey).catch(() => {});
-            } else if (nw.photoStorageKey !== ow.photoStorageKey) {
-              await deleteWatchImage(ow.photoStorageKey).catch(() => {});
+            if (ow.photoStorageKey) {
+              const nw = byId.get(ow.id);
+              if (!nw?.photoStorageKey || nw.photoStorageKey !== ow.photoStorageKey) {
+                await deleteWatchImage(ow.photoStorageKey).catch(() => {});
+              }
+            }
+            for (const p of ow.photos ?? []) {
+              if (!p.storageKey) continue;
+              const nw = byId.get(ow.id);
+              if (!nw?.photos?.some((np) => np.storageKey === p.storageKey)) {
+                await deleteWatchImage(p.storageKey).catch(() => {});
+              }
             }
           }
           setWatches(withBlobs);
@@ -1643,6 +2194,7 @@ export default function Page() {
           const { watches: incoming, idMap } = remapIncomingForMerge(watches, parsed.watches);
           const photos = parsed.embeddedPhotos.map((ep) => ({
             watchId: idMap.get(ep.watchId) ?? ep.watchId,
+            photoId: ep.photoId,
             base64: ep.base64,
           }));
           const withBlobs = await persistImportedPhotos(incoming, photos);
@@ -1957,10 +2509,34 @@ export default function Page() {
                 tone={watchesHydrated && watchesMissingValueData > 0 ? "attention" : "default"}
               />
               <DashboardMetricCard
-                label="Common brand"
-                value={!watchesHydrated ? "—" : mostCommonBrand ?? "—"}
-                helper="Most frequent brand in your saved collection."
+                label="Brands represented"
+                value={!watchesHydrated ? "—" : String(brandsRepresented)}
+                helper={mostCommonBrand ? `Most represented: ${mostCommonBrand}.` : "A picture of collection breadth."}
               />
+            </div>
+
+            <div className="mt-4 grid gap-3 rounded-3xl border border-[hsla(42,32%,52%,0.36)] bg-black/24 p-4 sm:grid-cols-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">Most worn</p>
+                <p className="mt-1 truncate text-sm font-semibold text-white/86">
+                  {mostWornWatch ? `${mostWornWatch.brand} ${mostWornWatch.model}` : "—"}
+                </p>
+                <p className="mt-1 text-[12px] text-white/44">{mostWornWatch ? `${mostWornWatch.wearCount ?? 0} wears` : "Start tracking wear."}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">Newest addition</p>
+                <p className="mt-1 truncate text-sm font-semibold text-white/86">
+                  {newestAddition ? `${newestAddition.brand} ${newestAddition.model}` : "—"}
+                </p>
+                <p className="mt-1 text-[12px] text-white/44">{newestAddition ? "Latest catalogue entry." : "Add your first watch."}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">Average value</p>
+                <p className="mt-1 truncate text-sm font-semibold text-white/86">
+                  {averageCollectionValue ? formatCollectionCurrency(averageCollectionValue, collectionCurrency) : "—"}
+                </p>
+                <p className="mt-1 text-[12px] text-white/44">Based on watches with current value data.</p>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
@@ -2158,10 +2734,37 @@ export default function Page() {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => void onPickPhoto(e.target.files?.[0] ?? null)}
+                        multiple
+                        onChange={(e) => void onPickPhotos(e.target.files)}
                         className="block w-full min-h-[48px] text-[13px] font-medium text-white/80 file:mr-3 file:rounded-xl file:border-2 file:border-[hsla(42,36%,48%,0.9)] file:bg-black/45 file:px-3 file:py-2.5 file:text-[13px] file:font-medium file:text-white/90 hover:file:border-[hsla(44,40%,58%,0.96)] hover:file:bg-black/55"
                       />
                     </label>
+                    {photoGalleryPreviewUrls.length > 1 ? (
+                      <div className="mt-4 grid grid-cols-4 gap-2">
+                        {photoGalleryPreviewUrls.map((url, index) => (
+                          <button
+                            key={`${url}-${index}`}
+                            type="button"
+                            onClick={() => {
+                              setPhotoPreviewUrl(url);
+                              setPrimaryPhotoIndex(index);
+                            }}
+                            className={classNames(
+                              "relative aspect-square overflow-hidden rounded-xl border bg-black/40",
+                              primaryPhotoIndex === index ? "border-[hsla(44,44%,70%,0.78)]" : "border-white/12",
+                            )}
+                            aria-label={`Set photo ${index + 1} as primary`}
+                          >
+                            <img src={url} alt="" className="h-full w-full object-cover grayscale saturate-[0.5] brightness-[0.82]" />
+                            {primaryPhotoIndex === index ? (
+                              <span className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-white/80">
+                                Primary
+                              </span>
+                            ) : null}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                     <div className="mt-4">
                       <button
                         type="button"
@@ -2276,6 +2879,33 @@ export default function Page() {
                       placeholder="e.g. Automatic calibre 3235"
                     />
                   </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Lug-to-lug</span>
+                    <input
+                      value={lugToLugStr}
+                      onChange={(e) => setLugToLugStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. 47 mm"
+                    />
+                  </label>
+                  <label className="grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Water resistance</span>
+                    <input
+                      value={waterResistanceStr}
+                      onChange={(e) => setWaterResistanceStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. 100 m"
+                    />
+                  </label>
+                  <label className="grid gap-2.5 sm:col-span-2">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Complication / style</span>
+                    <input
+                      value={complicationStyleStr}
+                      onChange={(e) => setComplicationStyleStr(e.target.value)}
+                      className={classNames(gold.input, gold.focus, "min-h-[52px]")}
+                      placeholder="e.g. Diver, GMT, chronograph, dress"
+                    />
+                  </label>
                 </div>
               </div>
             ) : null}
@@ -2382,6 +3012,15 @@ export default function Page() {
                       onChange={(e) => setServiceHistory(e.target.value)}
                       className={classNames("min-h-[110px] resize-y", gold.input, gold.focus)}
                       placeholder="Last service, work done, dates…"
+                    />
+                  </label>
+                  <label className="sm:col-span-2 grid gap-2.5">
+                    <span className="text-[13px] font-medium tracking-wide text-white/65">Provenance notes</span>
+                    <textarea
+                      value={provenanceNotesStr}
+                      onChange={(e) => setProvenanceNotesStr(e.target.value)}
+                      className={classNames("min-h-[90px] resize-y", gold.input, gold.focus)}
+                      placeholder="Original owner, full set story, important context…"
                     />
                   </label>
                   <label className="sm:col-span-2 grid gap-2.5">
@@ -2534,6 +3173,61 @@ export default function Page() {
             </div>
           </div>
 
+          <div className={classNames("mt-6 grid gap-3 rounded-3xl p-4 sm:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_0.8fr_0.9fr]", gold.frameLg)}>
+            <label className="grid gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/46">Search archive</span>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={classNames(gold.input, gold.focus, "min-h-[46px] py-2.5")}
+                placeholder="Brand, model, reference..."
+              />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/46">Brand</span>
+              <select
+                value={brandFilter}
+                onChange={(e) => setBrandFilter(e.target.value)}
+                className={classNames(gold.input, gold.focus, "min-h-[46px] py-2.5")}
+              >
+                <option value="all">All brands</option>
+                {brandFilterOptions.map((brandName) => (
+                  <option key={brandName} value={brandName}>
+                    {brandName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/46">Style</span>
+              <select
+                value={styleFilter}
+                onChange={(e) => setStyleFilter(e.target.value)}
+                className={classNames(gold.input, gold.focus, "min-h-[46px] py-2.5")}
+              >
+                <option value="all">All styles</option>
+                {styleFilterOptions.map((style) => (
+                  <option key={style} value={style}>
+                    {style}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/46">Filter</span>
+              <select
+                value={collectionFilter}
+                onChange={(e) => setCollectionFilter(e.target.value as CollectionFilter)}
+                className={classNames(gold.input, gold.focus, "min-h-[46px] py-2.5")}
+              >
+                <option value="all">All watches</option>
+                <option value="service">Has service history</option>
+                <option value="missing-values">Missing values</option>
+                <option value="most-worn">Most worn first</option>
+              </select>
+            </label>
+          </div>
+
           {!watchesHydrated ? (
             <div className={classNames("mt-6 rounded-3xl p-8 text-center text-sm text-white/62", gold.frameLg)}>
               Loading collection...
@@ -2610,7 +3304,13 @@ export default function Page() {
                   </button>
                 </div>
               ) : null}
-              {watches.map((w) =>
+              {filteredWatches.length === 0 ? (
+                <div className="col-span-full rounded-3xl border border-dashed border-[hsla(42,34%,48%,0.5)] bg-black/24 p-8 text-center">
+                  <p className="text-base font-semibold text-white/82">No watches match this archive view.</p>
+                  <p className="mt-2 text-sm leading-relaxed text-white/52">Try clearing search or changing the filters.</p>
+                </div>
+              ) : null}
+              {filteredWatches.map((w) =>
                 collectionDisplayMode === "grid" ? (
                   <WatchCard
                     key={w.id}
@@ -2713,11 +3413,14 @@ export default function Page() {
         <WatchDetailPanel
           watch={detailWatch}
           displaySrc={resolvedPhotoUrls[detailWatch.id]}
+          gallerySrcs={resolvedPhotoGalleryUrls[detailWatch.id]}
           currency={collectionCurrency}
           onClose={() => setDetailWatch(null)}
           onEdit={(w) => {
             void onStartEdit(w);
           }}
+          onMarkWorn={onMarkWorn}
+          onAddTimelineEntry={onAddTimelineEntry}
         />
       ) : null}
     </div>
