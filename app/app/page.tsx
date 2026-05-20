@@ -174,6 +174,8 @@ const gold = {
   input:
     "rounded-2xl border-2 border-[hsla(42,40%,54%,0.92)] bg-black/45 px-4 py-3 text-sm text-white/92 outline-none placeholder:text-white/42",
   tag: "rounded-lg border-2 border-[hsla(42,38%,56%,0.9)] bg-black/38 px-2.5 py-1.5 text-[13px] font-medium leading-snug text-white/90 shadow-[inset_0_1px_0_0_hsla(44,34%,64%,0.16)]",
+  tagSoft:
+    "rounded-full border border-[hsla(42,32%,52%,0.5)] bg-black/34 px-2.5 py-1 text-[11px] font-medium leading-snug tracking-wide text-white/72 shadow-[inset_0_1px_0_0_hsla(44,28%,64%,0.1)]",
   statCell:
     "rounded-xl border-2 border-[hsla(42,38%,54%,0.9)] bg-black/42 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(43,34%,62%,0.16),0_6px_22px_-14px_hsla(42,34%,8%,0.44)]",
   btnPrimary:
@@ -191,6 +193,7 @@ const gold = {
 const ADD_WATCH_STEP_COUNT = 4;
 
 type MainNavView = "dashboard" | "add-watch" | "collection";
+type CollectionDisplayMode = "grid" | "compact";
 
 /** Horology-inspired mark: case + dial ring + twelve index + single hand — minimal, not illustrative. */
 function VaultMark({ className }: { className?: string }) {
@@ -420,6 +423,78 @@ function EditorialWatchImage({
   );
 }
 
+function MetadataTag({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
+
+  return (
+    <div className="rounded-2xl border border-[hsla(42,30%,54%,0.32)] bg-black/32 px-3 py-2 shadow-[inset_0_1px_0_0_hsla(44,28%,68%,0.09)] backdrop-blur-sm">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,34%,70%,0.62)]">{label}</p>
+      <p className="mt-1 max-w-[11rem] truncate text-[12px] font-medium leading-tight text-white/84">{value}</p>
+    </div>
+  );
+}
+
+function EmptyVaultIllustration({ className }: { className?: string }) {
+  return (
+    <div
+      className={classNames(
+        "relative mx-auto flex aspect-square w-28 items-center justify-center rounded-full border border-[hsla(42,38%,56%,0.48)] bg-[radial-gradient(circle_at_50%_40%,hsla(44,42%,64%,0.14),transparent_48%),linear-gradient(145deg,rgba(255,255,255,0.04),rgba(0,0,0,0.38))] shadow-[inset_0_1px_0_0_hsla(44,34%,70%,0.12),0_24px_60px_-38px_hsla(42,44%,24%,0.74)]",
+        className,
+      )}
+      aria-hidden
+    >
+      <div className="absolute inset-4 rounded-full border border-[hsla(44,38%,64%,0.38)]" />
+      <div className="absolute top-5 h-4 w-px rounded-full bg-[hsla(44,46%,72%,0.64)]" />
+      <div className="h-px w-10 origin-right -rotate-[28deg] rounded-full bg-[hsla(44,42%,72%,0.58)]" />
+      <div className="absolute bottom-6 h-px w-12 rounded-full bg-gradient-to-r from-transparent via-[hsla(44,38%,66%,0.48)] to-transparent" />
+    </div>
+  );
+}
+
+function CollectorEmptyState({
+  title,
+  body,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+}: {
+  title: string;
+  body: string;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <div className={classNames("relative overflow-hidden rounded-3xl p-8 text-center sm:p-10", gold.frameLg)}>
+      <div className="absolute inset-0 bg-[radial-gradient(520px_260px_at_50%_0%,hsla(44,42%,58%,0.12),transparent_62%)]" />
+      <div className="relative mx-auto max-w-md">
+        <EmptyVaultIllustration />
+        <p className={classNames("mt-7 inline-flex rounded-full px-3 py-1 text-[11px] tracking-widest", gold.pill)}>
+          EMPTY VAULT
+        </p>
+        <h3 className="mt-5 text-balance text-xl font-semibold tracking-tight text-white/94">{title}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-white/58">{body}</p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <button type="button" onClick={onPrimary} className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnPrimary)}>
+            {primaryLabel}
+          </button>
+          {secondaryLabel && onSecondary ? (
+            <button
+              type="button"
+              onClick={onSecondary}
+              className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnSecondary)}
+            >
+              {secondaryLabel}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VaultAtmospherePanel({
   watch,
   imageSrc,
@@ -435,35 +510,69 @@ function VaultAtmospherePanel({
   const subtitle = watch
     ? [watch.reference ? `Ref. ${watch.reference}` : null, watch.year || null].filter(Boolean).join(" · ") || "Recently added"
     : "Add a watch photo to create an atmospheric collection cover.";
+  const meta = watch
+    ? [
+        { label: "Brand", value: watch.brand },
+        { label: "Reference", value: watch.reference },
+        { label: "Year", value: watch.year },
+        { label: "Movement", value: watch.movement },
+      ]
+    : [];
 
   return (
-    <div className={classNames("relative min-h-[18rem] overflow-hidden rounded-3xl p-5 sm:min-h-[21rem] sm:p-6", gold.frameLg)}>
+    <div
+      className={classNames(
+        "relative min-h-[20rem] overflow-hidden rounded-[2rem] p-5 transition duration-300 sm:min-h-[23rem] sm:p-7",
+        gold.frameLg,
+      )}
+    >
       {imageSrc ? (
         <img
           src={imageSrc}
           alt={watch ? `${watch.brand} ${watch.model}` : "Collection cover"}
           draggable={false}
-          className="absolute inset-0 h-full w-full object-cover opacity-[0.78] grayscale saturate-[0.34] brightness-[0.58] contrast-[1.18]"
+          className="absolute inset-0 h-full w-full object-cover opacity-[0.78] grayscale saturate-[0.32] brightness-[0.56] contrast-[1.18]"
         />
       ) : (
-        <div className="absolute inset-0 bg-[radial-gradient(420px_280px_at_50%_18%,hsla(44,40%,58%,0.17),transparent_62%),linear-gradient(145deg,rgba(255,255,255,0.045),rgba(0,0,0,0.42))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(420px_280px_at_68%_18%,hsla(44,40%,58%,0.16),transparent_62%),radial-gradient(340px_220px_at_18%_78%,hsla(42,32%,34%,0.18),transparent_66%),linear-gradient(145deg,rgba(255,255,255,0.045),rgba(0,0,0,0.42))]" />
       )}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_34%,transparent_0,rgba(0,0,0,0.18)_35%,rgba(0,0,0,0.78)_100%),linear-gradient(180deg,rgba(0,0,0,0.2),rgba(0,0,0,0.88)_100%)]" />
-      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,46%,74%,0.5)] to-transparent" />
-      <div className="relative flex h-full min-h-[15.5rem] flex-col justify-end">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[hsla(44,44%,76%,0.9)]">
-          Vault atmosphere
-        </p>
-        <h2 className="mt-3 text-balance text-2xl font-semibold tracking-tight text-white/95 sm:text-3xl">{title}</h2>
-        <p className="mt-2 max-w-md text-sm leading-relaxed text-white/62">{subtitle}</p>
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className={classNames("rounded-full px-3 py-1.5 text-[11px] uppercase tracking-widest", gold.pill)}>
-            {collectionLabel}
-          </span>
-          <button type="button" onClick={onAddWatch} className={classNames("min-h-[40px]", gold.btnSmSecondary)}>
-            Add watch photo
-          </button>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_68%_28%,transparent_0,rgba(0,0,0,0.14)_32%,rgba(0,0,0,0.76)_100%),linear-gradient(90deg,rgba(0,0,0,0.84),rgba(0,0,0,0.42)_48%,rgba(0,0,0,0.82)_100%),linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.9)_100%)]" />
+      <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,46%,74%,0.5)] to-transparent" />
+      <div className="absolute -bottom-28 right-8 h-56 w-56 rounded-full bg-[hsla(42,38%,42%,0.12)] blur-3xl" />
+      <div className="relative grid h-full min-h-[17.5rem] gap-7 md:grid-cols-[1fr_0.72fr] md:items-end">
+        <div className="flex h-full flex-col justify-end">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[hsla(44,44%,76%,0.86)]">
+            Vault atmosphere
+          </p>
+          <h2
+            className={classNames(
+              vaultSerif.className,
+              "mt-4 max-w-2xl text-balance text-3xl font-semibold leading-[0.96] tracking-[0.01em] text-white/96 sm:text-4xl lg:text-[2.85rem]",
+            )}
+          >
+            {title}
+          </h2>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/64 sm:text-[0.98rem]">{subtitle}</p>
+          <div className="mt-6 flex flex-wrap items-center gap-2.5">
+            <span className={classNames("rounded-full px-3 py-1.5 text-[11px] uppercase tracking-widest", gold.pill)}>
+              {collectionLabel}
+            </span>
+            <button type="button" onClick={onAddWatch} className={classNames("min-h-[40px]", gold.btnSmSecondary)}>
+              Add watch photo
+            </button>
+          </div>
         </div>
+        {meta.length > 0 ? (
+          <div className="grid grid-cols-2 gap-2.5 md:self-end">
+            {meta.map((item) => (
+              <MetadataTag key={item.label} label={item.label} value={item.value} />
+            ))}
+          </div>
+        ) : (
+          <div className="hidden justify-self-end md:block">
+            <EmptyVaultIllustration className="w-32 opacity-80" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -483,15 +592,15 @@ function DashboardMetricCard({
   return (
     <div
       className={classNames(
-        "relative overflow-hidden rounded-2xl p-4",
+        "relative overflow-hidden rounded-2xl p-4 sm:p-5",
         gold.frameLg,
         tone === "attention" ? "bg-amber-200/[0.045]" : "bg-white/[0.025]",
       )}
     >
       <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,46%,72%,0.42)] to-transparent" />
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/48">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-white/94 sm:text-3xl">{value}</p>
-      <p className="mt-2 min-h-[2.5rem] text-[12px] leading-relaxed text-white/52">{helper}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/45">{label}</p>
+      <p className="mt-3 text-[1.65rem] font-semibold leading-none tracking-tight text-white/93 sm:text-[2rem]">{value}</p>
+      <p className="mt-3 min-h-[2.5rem] text-[12px] leading-relaxed text-white/50">{helper}</p>
     </div>
   );
 }
@@ -578,9 +687,12 @@ function DashboardRecentWatches({
         </div>
       ) : (
         <div className="mt-4 rounded-2xl border border-dashed border-[hsla(42,34%,48%,0.56)] bg-black/24 p-5 text-center">
-          <p className="text-sm font-medium text-white/72">No watches added yet.</p>
-          <p className="mt-2 text-[12px] leading-relaxed text-white/48">Add your first watch to start building the dashboard.</p>
-          <button type="button" onClick={onAddWatch} className={classNames("mt-4 min-h-[44px]", gold.btnPrimary)}>
+          <EmptyVaultIllustration className="w-20 opacity-85" />
+          <p className="mt-5 text-sm font-medium text-white/76">Your vault is empty.</p>
+          <p className="mt-2 text-[12px] leading-relaxed text-white/48">
+            Start documenting the watches that matter to you.
+          </p>
+          <button type="button" onClick={onAddWatch} className={classNames("mt-5 min-h-[44px]", gold.btnPrimary)}>
             Add first watch
           </button>
         </div>
@@ -609,9 +721,7 @@ function WatchCard({
   return (
     <div
       className={classNames(
-        "group relative flex flex-col overflow-hidden rounded-2xl backdrop-blur",
-        gold.frame,
-        gold.cardHover,
+        "group relative flex flex-col overflow-hidden rounded-[1.55rem] border border-[hsla(42,32%,54%,0.48)] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.018)_46%,rgba(0,0,0,0.28))] shadow-[inset_0_1px_0_0_hsla(44,32%,70%,0.12),0_18px_46px_-34px_rgba(0,0,0,0.92)] backdrop-blur transition duration-300 ease-out hover:-translate-y-0.5 hover:border-[hsla(44,38%,64%,0.62)] hover:bg-white/[0.04] hover:shadow-[inset_0_1px_0_0_hsla(44,36%,74%,0.17),0_24px_64px_-36px_hsla(42,36%,18%,0.72)]",
       )}
     >
       <button
@@ -635,13 +745,15 @@ function WatchCard({
         </div>
       </button>
 
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-[0.9375rem] font-semibold tracking-wide text-white/93">{watch.brand}</p>
-            <p className="mt-0.5 truncate text-[0.9375rem] font-medium text-white/76">{watch.model}</p>
+            <p className="truncate text-[0.82rem] font-semibold uppercase tracking-[0.16em] text-[hsla(44,38%,76%,0.78)]">
+              {watch.brand}
+            </p>
+            <p className="mt-1 truncate text-[1.08rem] font-semibold tracking-tight text-white/92">{watch.model}</p>
           </div>
-          <span className="hidden shrink-0 rounded-full border-2 border-[hsla(44,40%,56%,0.92)] bg-[hsla(40,24%,8%,0.82)] px-2 py-1 text-[11px] font-medium tracking-widest text-[hsla(46,46%,94%,0.97)] shadow-[inset_0_1px_0_0_hsla(44,32%,58%,0.22)] sm:inline">
+          <span className="hidden shrink-0 rounded-full border border-[hsla(44,34%,54%,0.58)] bg-[hsla(40,24%,8%,0.72)] px-2 py-1 text-[10px] font-medium tracking-widest text-[hsla(46,42%,88%,0.9)] shadow-[inset_0_1px_0_0_hsla(44,32%,58%,0.14)] sm:inline">
             CATALOGUED
           </span>
         </div>
@@ -651,14 +763,15 @@ function WatchCard({
           typeof watch.estimatedValue === "number" ||
           watch.condition ||
           watch.boxPapers) && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {watch.reference ? <span className={gold.tag}>Ref. {watch.reference}</span> : null}
-            {watch.year ? <span className={gold.tag}>Year {watch.year}</span> : null}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {watch.reference ? <span className={gold.tagSoft}>Ref. {watch.reference}</span> : null}
+            {watch.year ? <span className={gold.tagSoft}>Year {watch.year}</span> : null}
+            {watch.movement ? <span className={gold.tagSoft}>{watch.movement}</span> : null}
             {typeof watch.estimatedValue === "number" ? (
-              <span className={gold.tag}>Est. {formatCollectionCurrency(watch.estimatedValue, currency)}</span>
+              <span className={gold.tagSoft}>Est. {formatCollectionCurrency(watch.estimatedValue, currency)}</span>
             ) : null}
-            {watch.condition ? <span className={gold.tag}>{CONDITION_LABELS[watch.condition]}</span> : null}
-            {watch.boxPapers ? <span className={gold.tag}>{BOXPAPERS_LABELS[watch.boxPapers]}</span> : null}
+            {watch.condition ? <span className={gold.tagSoft}>{CONDITION_LABELS[watch.condition]}</span> : null}
+            {watch.boxPapers ? <span className={gold.tagSoft}>{BOXPAPERS_LABELS[watch.boxPapers]}</span> : null}
           </div>
         )}
 
@@ -687,6 +800,75 @@ function WatchCard({
         </div>
       </div>
     </div>
+  );
+}
+
+function CompactWatchRow({
+  watch,
+  displaySrc,
+  onDelete,
+  onEdit,
+  onOpenDetail,
+  currency,
+}: {
+  watch: Watch;
+  displaySrc?: string;
+  onDelete: (id: string) => void;
+  onEdit: (watch: Watch) => void;
+  onOpenDetail: (watch: Watch) => void;
+  currency: CollectionCurrency;
+}) {
+  const src = displaySrc ?? watch.photoUrl;
+  const meta = [
+    watch.reference ? `Ref. ${watch.reference}` : null,
+    watch.year || null,
+    watch.movement || null,
+    watch.condition ? CONDITION_LABELS[watch.condition] : null,
+    watch.boxPapers ? BOXPAPERS_LABELS[watch.boxPapers] : null,
+  ].filter(Boolean);
+
+  return (
+    <article className="group rounded-2xl border border-[hsla(42,30%,52%,0.42)] bg-black/28 p-3 shadow-[inset_0_1px_0_0_hsla(44,28%,68%,0.09)] transition duration-300 hover:border-[hsla(44,38%,64%,0.62)] hover:bg-white/[0.035]">
+      <div className="flex gap-3 sm:items-center">
+        <button
+          type="button"
+          onClick={() => onOpenDetail(watch)}
+          className="shrink-0"
+          aria-label={`View details for ${watch.brand} ${watch.model}`}
+        >
+          <EditorialWatchImage src={src} alt={`${watch.brand} ${watch.model}`} variant="thumbnail" interactive />
+        </button>
+        <button type="button" onClick={() => onOpenDetail(watch)} className="min-w-0 flex-1 text-left">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <p className="truncate text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-[hsla(44,38%,76%,0.78)]">
+              {watch.brand}
+            </p>
+            {watch.isDemo ? <span className={gold.tagSoft}>Demo</span> : null}
+          </div>
+          <p className="mt-1 truncate text-base font-semibold tracking-tight text-white/92">{watch.model}</p>
+          <p className="mt-1 truncate text-[12px] leading-relaxed text-white/50">
+            {meta.length > 0 ? meta.join(" · ") : "Uncatalogued details"}
+          </p>
+        </button>
+        <div className="hidden min-w-[7rem] text-right sm:block">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Estimated</p>
+          <p className="mt-1 text-sm font-medium text-[hsla(44,42%,78%,0.86)]">
+            {typeof watch.estimatedValue === "number" ? formatCollectionCurrency(watch.estimatedValue, currency) : "—"}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-white/10 pt-3">
+        <button type="button" onClick={() => onOpenDetail(watch)} className={classNames("min-h-[40px]", gold.btnSmPrimary)}>
+          View
+        </button>
+        <button type="button" onClick={() => onEdit(watch)} className={classNames("min-h-[40px]", gold.btnSmSecondary)}>
+          Edit
+        </button>
+        <button type="button" onClick={() => onDelete(watch.id)} className={classNames("min-h-[40px]", gold.btnSmSecondary)}>
+          Delete
+        </button>
+      </div>
+    </article>
   );
 }
 
@@ -879,6 +1061,7 @@ export default function Page() {
   const [collectionPersistenceWarning, setCollectionPersistenceWarning] = useState<string | null>(null);
   const loadGenerationRef = useRef(0);
   const [mainNavView, setMainNavView] = useState<MainNavView>("dashboard");
+  const [collectionDisplayMode, setCollectionDisplayMode] = useState<CollectionDisplayMode>("grid");
 
   const goMainView = useCallback((v: MainNavView) => {
     setMainNavView(v);
@@ -1723,17 +1906,17 @@ export default function Page() {
           <section id="dashboard" className="scroll-mt-24 pb-10 pt-6 sm:pt-8 lg:pt-10">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className={classNames("mb-4 inline-flex items-center gap-2", gold.pill)}>DASHBOARD</p>
+                <p className={classNames("mb-4 inline-flex items-center gap-2", gold.pill)}>PRIVATE VAULT</p>
                 <h1
                   className={classNames(
                     vaultSerif.className,
                     "text-balance text-[2.35rem] font-bold leading-[0.98] tracking-[0.01em] text-white/96 sm:text-[3.25rem] lg:text-[3.65rem]",
                   )}
                 >
-                  Collection dashboard
+                  The vault at a glance
                 </h1>
                 <p className="mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-white/66 sm:text-base">
-                  Manage your saved watches, valuation gaps, recent additions, and local backups from one private workspace.
+                  A quiet overview of your watches, valuation gaps, recent additions, and local backups.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
@@ -1886,11 +2069,14 @@ export default function Page() {
         {mainNavView === "add-watch" ? (
         <section
           id="add-watch"
-          className={classNames("scroll-mt-24 rounded-3xl p-5 backdrop-blur sm:p-7", gold.frameLg)}
+          className={classNames("scroll-mt-24 rounded-[2rem] p-5 backdrop-blur sm:p-8", gold.frameLg)}
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-white/92">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[hsla(44,40%,74%,0.82)]">
+                Catalogue entry
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white/94">
                 {editingWatchId ? "Edit watch" : "Add a watch"}
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/62">
@@ -1936,21 +2122,39 @@ export default function Page() {
             className="mt-8 space-y-8"
           >
             {addWatchStep === 1 ? (
-              <div className="mx-auto max-w-xl space-y-6">
+              <div className="mx-auto max-w-4xl space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold tracking-tight text-white/90">Photos</h3>
+                  <h3 className="text-xl font-semibold tracking-tight text-white/92">Photograph</h3>
                   <p className="mt-2 text-[13px] leading-relaxed text-white/55">
                     Add a clear photo of the watch. HoroLair uses it for restrained thumbnails and, when suitable, the
                     optional vault atmosphere image.
                   </p>
                 </div>
-                <div className={classNames("overflow-hidden rounded-2xl bg-black/25", gold.frame)}>
-                  <div className="aspect-[4/3] p-4">
-                    <EditorialWatchImage src={photoPreviewUrl} alt="Photo preview" variant="preview" />
-                  </div>
-                  <div className="border-t-2 border-[hsla(42,34%,40%,0.75)] p-4 sm:p-5">
-                    <label className="grid gap-2.5">
-                      <span className="text-[13px] font-medium tracking-wide text-white/65">Upload image</span>
+                <div className={classNames("overflow-hidden rounded-[1.6rem] bg-black/25", gold.frame)}>
+                  <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
+                    <div className="aspect-[4/3] p-4 sm:p-5 lg:aspect-auto">
+                      <div className="relative h-full min-h-[18rem] overflow-hidden rounded-2xl">
+                        <EditorialWatchImage src={photoPreviewUrl} alt="Photo preview" variant="preview" />
+                        {!photoPreviewUrl ? (
+                          <div className="pointer-events-none absolute inset-x-6 bottom-6 rounded-2xl border border-[hsla(42,34%,54%,0.34)] bg-black/36 p-4 text-center backdrop-blur-sm">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,42%,76%,0.78)]">
+                              Watch photograph
+                            </p>
+                            <p className="mt-2 text-sm leading-relaxed text-white/64">
+                              Use a quiet wrist shot, dial close-up, or provenance image.
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="border-t-2 border-[hsla(42,34%,40%,0.75)] p-4 sm:p-5 lg:border-l-2 lg:border-t-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/48">Image treatment</p>
+                      <p className="mt-2 text-[13px] leading-relaxed text-white/58">
+                        Photos are kept practical for identification, then displayed with restrained monochrome overlays in the
+                        archive.
+                      </p>
+                      <label className="mt-5 grid gap-2.5">
+                      <span className="text-[13px] font-medium tracking-wide text-white/68">Upload image</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -1991,6 +2195,7 @@ export default function Page() {
                     <p className="mt-2 text-[12px] leading-relaxed text-white/52">
                       Photos and details stay in your private vault.
                     </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2271,10 +2476,33 @@ export default function Page() {
         <section id="collection" className="scroll-mt-24 pb-16 pt-12">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-white/92">Collection</h2>
-              <p className="mt-1 text-sm text-white/60">Your watches, at a glance.</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[hsla(44,40%,74%,0.82)]">Collection</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white/94">Private archive</h2>
+              <p className="mt-1 text-sm leading-relaxed text-white/58">Curated records for the watches that matter to you.</p>
             </div>
             <div className="flex flex-wrap items-end justify-end gap-2 sm:items-center">
+              <div className="flex rounded-2xl border border-[hsla(42,34%,50%,0.52)] bg-black/34 p-1">
+                <button
+                  type="button"
+                  onClick={() => setCollectionDisplayMode("grid")}
+                  className={classNames(
+                    "min-h-[38px] rounded-xl px-3 text-[12px] font-semibold tracking-wide transition",
+                    collectionDisplayMode === "grid" ? "bg-white/[0.08] text-white/92" : "text-white/52 hover:text-white/78",
+                  )}
+                >
+                  Grid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCollectionDisplayMode("compact")}
+                  className={classNames(
+                    "min-h-[38px] rounded-xl px-3 text-[12px] font-semibold tracking-wide transition",
+                    collectionDisplayMode === "compact" ? "bg-white/[0.08] text-white/92" : "text-white/52 hover:text-white/78",
+                  )}
+                >
+                  Compact
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => void onExportBackup()}
@@ -2344,55 +2572,33 @@ export default function Page() {
               </div>
             </div>
           ) : watches.length === 0 ? (
-            <div className={classNames("mt-6 rounded-3xl p-8 sm:p-10", gold.frameLg)}>
-              <div className="mx-auto max-w-md text-center">
-                {noWatchDataFound ? (
-                  <p className="text-sm leading-relaxed text-white/62">
-                    No collection data was found in this browser. If you have a backup file, import it to restore your
-                    collection.
-                  </p>
-                ) : null}
-                <p
-                  className={classNames(
-                    "mx-auto inline-flex rounded-full px-3 py-1 text-[11px] tracking-widest",
-                    gold.pill,
-                    noWatchDataFound ? "mt-6" : "",
-                  )}
-                >
-                  EMPTY COLLECTION
+            <>
+              {noWatchDataFound ? (
+                <p className="mt-6 rounded-2xl border border-[hsla(42,34%,48%,0.38)] bg-black/24 px-4 py-3 text-sm leading-relaxed text-white/58">
+                  No collection data was found in this browser. If you have a backup file, import it to restore your collection.
                 </p>
-                <p className="mt-5 text-lg font-semibold tracking-tight text-white/92">Your collection is ready</p>
-                <p className="mt-3 text-sm leading-relaxed text-white/58">
-                  Start your private watch collection by adding your first watch. Everything stays on this device until you export
-                  a backup.
-                </p>
-                <p className="mt-3 text-[11px] leading-relaxed text-white/42">
-                  HoroLair stores your collection locally on this device/browser. Mobile browsers may remove local website
-                  data. Export a backup regularly.
-                </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                  <button
-                    type="button"
-                    onClick={goAddWatchFromClick}
-                    className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnPrimary)}
-                  >
-                    Add first watch
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onLoadDemo}
-                    className={classNames("min-h-[48px] w-full sm:w-auto sm:min-w-[200px]", gold.btnSecondary)}
-                  >
-                    Load demo collection
-                  </button>
-                </div>
-                <p className="mt-6 text-xs leading-relaxed text-white/45">
+              ) : null}
+              <div className="mt-6">
+                <CollectorEmptyState
+                  title="Your vault is empty."
+                  body="Start documenting the watches that matter to you. Add photos, references, provenance notes, and value data in a private local archive."
+                  primaryLabel="Add first watch"
+                  onPrimary={goAddWatchFromClick}
+                  secondaryLabel="Load demo collection"
+                  onSecondary={onLoadDemo}
+                />
+                <p className="mx-auto mt-5 max-w-md text-center text-xs leading-relaxed text-white/42">
                   Demo entries are labelled &ldquo;Demo&rdquo; and can be removed with one tap after you load them.
                 </p>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              className={classNames(
+                "mt-6",
+                collectionDisplayMode === "grid" ? "grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" : "grid gap-3",
+              )}
+            >
               {watches.some((w) => w.isDemo) ? (
                 <div className="col-span-full flex flex-col gap-3 rounded-2xl border-2 border-dashed border-[hsla(42,36%,48%,0.58)] bg-black/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-white/70">
@@ -2404,17 +2610,29 @@ export default function Page() {
                   </button>
                 </div>
               ) : null}
-              {watches.map((w) => (
-                <WatchCard
-                  key={w.id}
-                  watch={w}
-                  displaySrc={resolvedPhotoUrls[w.id]}
-                  onDelete={onDeleteWatch}
-                  onEdit={onStartEdit}
-                  onOpenDetail={setDetailWatch}
-                  currency={collectionCurrency}
-                />
-              ))}
+              {watches.map((w) =>
+                collectionDisplayMode === "grid" ? (
+                  <WatchCard
+                    key={w.id}
+                    watch={w}
+                    displaySrc={resolvedPhotoUrls[w.id]}
+                    onDelete={onDeleteWatch}
+                    onEdit={onStartEdit}
+                    onOpenDetail={setDetailWatch}
+                    currency={collectionCurrency}
+                  />
+                ) : (
+                  <CompactWatchRow
+                    key={w.id}
+                    watch={w}
+                    displaySrc={resolvedPhotoUrls[w.id]}
+                    onDelete={onDeleteWatch}
+                    onEdit={onStartEdit}
+                    onOpenDetail={setDetailWatch}
+                    currency={collectionCurrency}
+                  />
+                ),
+              )}
             </div>
           )}
         </section>
