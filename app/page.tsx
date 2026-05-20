@@ -43,63 +43,74 @@ type ShowcaseWatch = {
   model: string;
   detail: string;
   note: string;
-  image: string;
-  imagePosition: string;
-  alt: string;
-  priority?: boolean;
+  image: {
+    src: string;
+    alt: string;
+    objectPosition: string;
+    priority?: boolean;
+  };
 };
 
-const showcaseWatches = [
+// To replace the sample photography later, update only each image.src, image.alt,
+// and image.objectPosition value below. Local files can live in /public and use
+// paths such as "/watches/my-chronograph.jpg".
+const watchShowcaseItems = [
   {
     category: "Moonphase",
     model: "Longines Conquest Classic Moonphase",
     detail: "Calendar moon display",
     note: "A true moonphase aperture for dress complications.",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Longines_Conquest_Classic_Moonphase_Chronograph.jpg/500px-Longines_Conquest_Classic_Moonphase_Chronograph.jpg",
-    imagePosition: "50% 48%",
-    alt: "Longines Conquest Classic Moonphase Chronograph watch showing a moonphase complication.",
-    priority: true,
+    image: {
+      src: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Longines_Conquest_Classic_Moonphase_Chronograph.jpg/500px-Longines_Conquest_Classic_Moonphase_Chronograph.jpg",
+      alt: "Longines Conquest Classic Moonphase Chronograph watch showing a moonphase complication.",
+      objectPosition: "50% 48%",
+      priority: true,
+    },
   },
   {
     category: "Chronograph",
     model: "Omega Speedmaster Professional",
     detail: "Pushers and subdials",
     note: "A collector-recognizable chronograph layout.",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/OMEGA-Speedmaster-Professional-Front_%28cropped%29.jpg/500px-OMEGA-Speedmaster-Professional-Front_%28cropped%29.jpg",
-    imagePosition: "50% 50%",
-    alt: "Omega Speedmaster Professional chronograph watch with pushers and three subdials.",
-    priority: true,
+    image: {
+      src: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/OMEGA-Speedmaster-Professional-Front_%28cropped%29.jpg/500px-OMEGA-Speedmaster-Professional-Front_%28cropped%29.jpg",
+      alt: "Omega Speedmaster Professional chronograph watch with pushers and three subdials.",
+      objectPosition: "50% 50%",
+      priority: true,
+    },
   },
   {
     category: "GMT",
     model: "Rolex GMT-Master II 16710",
     detail: "24-hour travel bezel",
     note: "Dual-time hardware with the correct GMT character.",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Rolex_GMT_Master_II_-_16710_%28without_background%2C_cropped_to_casing%29.jpg/500px-Rolex_GMT_Master_II_-_16710_%28without_background%2C_cropped_to_casing%29.jpg",
-    imagePosition: "50% 50%",
-    alt: "Rolex GMT-Master II watch showing a 24-hour bezel and GMT layout.",
+    image: {
+      src: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Rolex_GMT_Master_II_-_16710_%28without_background%2C_cropped_to_casing%29.jpg/500px-Rolex_GMT_Master_II_-_16710_%28without_background%2C_cropped_to_casing%29.jpg",
+      alt: "Rolex GMT-Master II watch showing a 24-hour bezel and GMT layout.",
+      objectPosition: "50% 50%",
+    },
   },
   {
     category: "Diver",
     model: "Citizen Promaster Diver 300 m",
     detail: "Timing bezel and lume",
     note: "Purpose-built dive watch proportions and bezel.",
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/b/b0/Citizen_Promaster_Eco-Drive_BJ8050-08E_Diver%27s_300_m.jpg",
-    imagePosition: "50% 52%",
-    alt: "Citizen Promaster Eco-Drive 300 meter diver watch with dive bezel.",
+    image: {
+      src: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Citizen_Promaster_Eco-Drive_BJ8050-08E_Diver%27s_300_m.jpg",
+      alt: "Citizen Promaster Eco-Drive 300 meter diver watch with dive bezel.",
+      objectPosition: "50% 52%",
+    },
   },
   {
     category: "Field Watch",
     model: "Hamilton Khaki Field Officer",
     detail: "Legible military dial",
     note: "High-contrast numerals in a field-ready case.",
-    image: "https://upload.wikimedia.org/wikipedia/commons/2/25/HamiltonKhakiFieldOfficer-002.jpg",
-    imagePosition: "50% 48%",
-    alt: "Hamilton Khaki Field Officer field watch with legible military-style numerals.",
+    image: {
+      src: "https://upload.wikimedia.org/wikipedia/commons/2/25/HamiltonKhakiFieldOfficer-002.jpg",
+      alt: "Hamilton Khaki Field Officer field watch with legible military-style numerals.",
+      objectPosition: "50% 48%",
+    },
   },
 ] satisfies readonly ShowcaseWatch[];
 
@@ -120,13 +131,13 @@ function WatchShowcaseCard({
       <div className="absolute inset-0 bg-[radial-gradient(260px_180px_at_50%_0%,hsla(44,50%,64%,0.12),transparent_68%)] opacity-80 transition duration-300 group-hover:opacity-100" />
       <div className="relative aspect-[5/4] overflow-hidden rounded-[1.05rem] border border-[hsla(42,34%,52%,0.3)] bg-black/52">
         <Image
-          src={watch.image}
-          alt={watch.alt}
+          src={watch.image.src}
+          alt={watch.image.alt}
           fill
           sizes="(min-width: 1024px) 190px, (min-width: 640px) 42vw, 92vw"
-          priority={watch.priority ?? false}
+          priority={watch.image.priority ?? false}
           className="object-cover transition duration-500 ease-out group-hover:scale-[1.035]"
-          style={{ objectPosition: watch.imagePosition }}
+          style={{ objectPosition: watch.image.objectPosition }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_46%,rgba(0,0,0,0.36)_100%)]" />
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,48%,78%,0.48)] to-transparent" />
@@ -168,7 +179,7 @@ function ProductMockup() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 min-[520px]:grid-cols-2 lg:grid-cols-6">
-          {showcaseWatches.map((watch, index) => (
+          {watchShowcaseItems.map((watch, index) => (
             <WatchShowcaseCard
               key={watch.category}
               watch={watch}
