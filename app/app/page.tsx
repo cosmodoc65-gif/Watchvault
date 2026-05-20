@@ -372,92 +372,133 @@ function Placeholder() {
   );
 }
 
-const collectorHeroCards = [
-  { title: "Dress", detail: "Moonphase", accent: "from-[hsla(44,48%,64%,0.24)]" },
-  { title: "Sport", detail: "Chronograph", accent: "from-[hsla(42,44%,58%,0.2)]" },
-  { title: "Diver", detail: "Daily rotation", accent: "from-[hsla(40,40%,52%,0.18)]" },
-] as const;
-
-function CollectorHeroCard({ title, detail, accent }: (typeof collectorHeroCards)[number]) {
+function DashboardMetricCard({
+  label,
+  value,
+  helper,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  helper: string;
+  tone?: "default" | "attention";
+}) {
   return (
     <div
       className={classNames(
-        "relative min-h-[8.5rem] overflow-hidden rounded-2xl p-3 sm:min-h-[10rem] sm:p-4",
-        gold.frame,
-        `bg-gradient-to-br ${accent} via-white/[0.035] to-black/30`,
+        "relative overflow-hidden rounded-2xl p-4",
+        gold.frameLg,
+        tone === "attention" ? "bg-amber-200/[0.045]" : "bg-white/[0.025]",
       )}
     >
-      <div className="absolute inset-x-4 top-4 h-px bg-gradient-to-r from-transparent via-[hsla(44,44%,72%,0.45)] to-transparent" />
-      <div className="relative flex h-full flex-col justify-between">
-        <div className="flex justify-center pt-3 sm:pt-4">
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-[hsla(44,46%,68%,0.86)] bg-black/36 shadow-[inset_0_1px_0_0_hsla(45,40%,76%,0.22),0_14px_28px_-18px_hsla(42,46%,24%,0.55)] sm:h-16 sm:w-16">
-            <div className="h-10 w-10 rounded-full border border-[hsla(44,40%,68%,0.44)] bg-[radial-gradient(circle_at_50%_38%,hsla(44,40%,70%,0.18),transparent_42%),linear-gradient(145deg,rgba(255,255,255,0.05),rgba(0,0,0,0.2))] sm:h-12 sm:w-12" />
-            <span className="absolute top-2 h-1.5 w-px rounded-full bg-[hsla(44,52%,76%,0.85)]" />
-            <span className="absolute h-px w-5 origin-left rotate-[28deg] rounded-full bg-[hsla(44,52%,76%,0.78)]" />
-            <span className="absolute h-4 w-px origin-bottom -rotate-[36deg] rounded-full bg-[hsla(44,44%,68%,0.72)]" />
-          </div>
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,74%,0.86)]">{title}</p>
-          <p className="mt-1 truncate text-[13px] font-medium text-white/78">{detail}</p>
-        </div>
-      </div>
+      <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,46%,72%,0.42)] to-transparent" />
+      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/48">{label}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-white/94 sm:text-3xl">{value}</p>
+      <p className="mt-2 min-h-[2.5rem] text-[12px] leading-relaxed text-white/52">{helper}</p>
     </div>
   );
 }
 
-function CollectorHeroPanel() {
-  return (
-    <div className={classNames("relative overflow-hidden rounded-[2rem] p-4 sm:p-5 lg:p-6", gold.frameLg)}>
-      <div className="absolute inset-0 bg-[radial-gradient(620px_320px_at_22%_12%,hsla(44,48%,58%,0.24),transparent_62%),radial-gradient(520px_280px_at_88%_80%,hsla(42,38%,42%,0.18),transparent_68%)]" />
-      <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[hsla(44,50%,78%,0.52)] to-transparent" />
-      <div className="relative rounded-[1.6rem] border border-[hsla(42,40%,58%,0.36)] bg-black/36 p-3 shadow-[inset_0_1px_0_0_hsla(44,36%,70%,0.13)] sm:p-4">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[hsla(44,46%,76%,0.88)]">
-              Collection overview
-            </p>
-            <p className="mt-1 text-[12px] text-white/48">Private vault mockup</p>
-          </div>
-          <div className="flex gap-1.5" aria-hidden>
-            <span className="h-2 w-2 rounded-full bg-[hsla(44,54%,70%,0.7)]" />
-            <span className="h-2 w-2 rounded-full bg-white/18" />
-            <span className="h-2 w-2 rounded-full bg-white/12" />
-          </div>
-        </div>
+function DashboardRecentWatchRow({
+  watch,
+  displaySrc,
+  currency,
+  onOpenDetail,
+}: {
+  watch: Watch;
+  displaySrc?: string;
+  currency: CollectionCurrency;
+  onOpenDetail: (watch: Watch) => void;
+}) {
+  const src = displaySrc ?? watch.photoUrl;
+  const valueLabel =
+    typeof watch.estimatedValue === "number" ? formatCollectionCurrency(watch.estimatedValue, currency) : "Value not added";
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-          {collectorHeroCards.map((card) => (
-            <CollectorHeroCard key={card.title} {...card} />
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenDetail(watch)}
+      className="group flex w-full items-center gap-3 rounded-2xl border border-[hsla(42,34%,48%,0.48)] bg-black/28 p-2.5 text-left transition hover:border-[hsla(44,42%,62%,0.72)] hover:bg-white/[0.04]"
+    >
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[hsla(42,34%,54%,0.5)] bg-black/45">
+        {src ? (
+          <img
+            src={src}
+            alt={`${watch.brand} ${watch.model}`}
+            draggable={false}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <Placeholder />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white/92">
+          {watch.brand} {watch.model}
+        </p>
+        <p className="mt-1 truncate text-[12px] text-white/52">
+          {[watch.reference ? `Ref. ${watch.reference}` : null, watch.year || null].filter(Boolean).join(" · ") || "No reference added"}
+        </p>
+      </div>
+      <p className="hidden shrink-0 text-right text-[12px] font-medium text-[hsla(44,42%,78%,0.86)] sm:block">{valueLabel}</p>
+    </button>
+  );
+}
+
+function DashboardRecentWatches({
+  watches,
+  isLoading,
+  resolvedPhotoUrls,
+  currency,
+  onOpenDetail,
+  onAddWatch,
+}: {
+  watches: Watch[];
+  isLoading: boolean;
+  resolvedPhotoUrls: Record<string, string>;
+  currency: CollectionCurrency;
+  onOpenDetail: (watch: Watch) => void;
+  onAddWatch: () => void;
+}) {
+  return (
+    <div className={classNames("rounded-3xl p-4 sm:p-5", gold.frameLg)}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,74%,0.86)]">
+            Recently added
+          </p>
+          <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/94">Latest watches</h2>
+        </div>
+        <button type="button" onClick={onAddWatch} className={classNames("min-h-[40px]", gold.btnSmSecondary)}>
+          Add Watch
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="mt-4 rounded-2xl border border-[hsla(42,34%,48%,0.48)] bg-black/24 p-5 text-center text-sm text-white/60">
+          Loading recent watches...
+        </div>
+      ) : watches.length > 0 ? (
+        <div className="mt-4 grid gap-2.5">
+          {watches.map((watch) => (
+            <DashboardRecentWatchRow
+              key={watch.id}
+              watch={watch}
+              displaySrc={resolvedPhotoUrls[watch.id]}
+              currency={currency}
+              onOpenDetail={onOpenDetail}
+            />
           ))}
         </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-[hsla(42,38%,54%,0.34)] bg-white/[0.035] p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/46">Estimated value</p>
-              <p className="text-[11px] text-[hsla(44,44%,78%,0.82)]">Local only</p>
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
-              <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-[hsla(42,46%,42%,0.86)] to-[hsla(46,52%,74%,0.9)]" />
-            </div>
-            <div className="mt-3 flex items-end justify-between">
-              <p className="text-2xl font-semibold tracking-tight text-white/92">Private</p>
-              <p className="text-[12px] text-white/48">photos · notes · values</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center sm:grid-cols-1">
-            {["Local", "Private", "Exportable"].map((label) => (
-              <div
-                key={label}
-                className="rounded-xl border border-[hsla(42,40%,58%,0.42)] bg-black/24 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[hsla(44,44%,82%,0.86)]"
-              >
-                {label}
-              </div>
-            ))}
-          </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-dashed border-[hsla(42,34%,48%,0.56)] bg-black/24 p-5 text-center">
+          <p className="text-sm font-medium text-white/72">No watches added yet.</p>
+          <p className="mt-2 text-[12px] leading-relaxed text-white/48">Add your first watch to start building the dashboard.</p>
+          <button type="button" onClick={onAddWatch} className={classNames("mt-4 min-h-[44px]", gold.btnPrimary)}>
+            Add first watch
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -812,6 +853,30 @@ export default function Page() {
   const totalCollectionValue = useMemo(() => {
     return watches.reduce((sum, w) => sum + (typeof w.estimatedValue === "number" ? w.estimatedValue : 0), 0);
   }, [watches]);
+
+  const watchesMissingValueData = useMemo(() => {
+    return watches.filter((w) => typeof w.purchasePrice !== "number" || typeof w.estimatedValue !== "number").length;
+  }, [watches]);
+
+  const recentlyAddedWatches = useMemo(() => {
+    return [...watches].sort((a, b) => b.createdAt - a.createdAt).slice(0, 4);
+  }, [watches]);
+
+  const dashboardTotalValueNeedsData = watchesHydrated && watches.length > 0 && totalCollectionValue === 0;
+  const dashboardTotalValueDisplay = !watchesHydrated
+    ? "—"
+    : watches.length === 0
+      ? "—"
+      : totalCollectionValue > 0
+        ? formatCollectionCurrency(totalCollectionValue, collectionCurrency)
+        : "Needs values";
+  const dashboardTotalValueHelper = !watchesHydrated
+    ? "Loading saved value data..."
+    : watches.length === 0
+      ? "Add watches with current values to calculate a total."
+      : totalCollectionValue === 0
+        ? "Add purchase or current values to calculate your total collection value."
+        : "Calculated from saved current estimated values.";
 
   const estimatedFieldLabel = useMemo(() => {
     const entry = CURRENCIES.find((c) => c.code === collectionCurrency);
@@ -1573,204 +1638,159 @@ export default function Page() {
           </div>
         ) : null}
         {mainNavView === "dashboard" ? (
-        <>
-        <section className="pb-10 pt-10 sm:pt-14 lg:pt-[4.75rem]">
-          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center xl:gap-10">
-            <div>
-              <p className={classNames("mb-5 inline-flex items-center gap-2", gold.pill)}>PRIVATE WATCH VAULT FOR COLLECTORS</p>
-              <h1
-                className={classNames(
-                  vaultSerif.className,
-                  "max-w-3xl text-balance text-[3rem] font-bold leading-[0.95] tracking-[0.01em] text-white/96 sm:text-[4rem] lg:text-[4.8rem]",
-                )}
-              >
-                A quiet lair for serious watch collections.
-              </h1>
-              <p className="mt-6 max-w-2xl text-pretty text-base font-normal leading-relaxed text-white/70 sm:text-[1.05rem]">
-                Catalogue, track and enjoy your collection in an elegant local-first workspace. Add watches, photos,
-                values and notes with no account, no cloud database, and a clean path to export your archive.
-              </p>
-
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <section id="dashboard" className="scroll-mt-24 pb-10 pt-6 sm:pt-8 lg:pt-10">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className={classNames("mb-4 inline-flex items-center gap-2", gold.pill)}>DASHBOARD</p>
+                <h1
+                  className={classNames(
+                    vaultSerif.className,
+                    "text-balance text-[2.35rem] font-bold leading-[0.98] tracking-[0.01em] text-white/96 sm:text-[3.25rem] lg:text-[3.65rem]",
+                  )}
+                >
+                  Collection dashboard
+                </h1>
+                <p className="mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-white/66 sm:text-base">
+                  Manage your saved watches, valuation gaps, recent additions, and local backups from one private workspace.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:justify-end">
                 <button type="button" onClick={goAddWatchFromClick} className={classNames("min-h-[48px] sm:min-w-[12rem]", gold.btnPrimary)}>
-                  Start cataloguing
+                  Add Watch
                 </button>
                 <button type="button" onClick={() => goMainView("collection")} className={classNames("min-h-[48px] sm:min-w-[11rem]", gold.btnSecondary)}>
                   View collection
                 </button>
               </div>
+            </div>
 
-              <div className="mt-8 grid gap-1.5">
-                <p className="text-[13px] font-medium tracking-wide text-white/52">{isMounted ? collectionLabel : "Loading collection..."}</p>
-                <p className="text-[13px] font-normal leading-relaxed tracking-wide text-white/60">
-                  Your collection stays on this device and browser. Export a backup to open it elsewhere — nothing syncs
-                  automatically.
-                </p>
-                <p className="text-[13px] font-medium tracking-wide text-white/52">Saved watches: {isMounted ? watches.length : "—"}</p>
-                <p className="text-[13px] font-medium tracking-wide text-white/52">
-                  Total Collection Value:{" "}
-                  {isMounted ? formatCollectionCurrency(totalCollectionValue, collectionCurrency) : "—"}
-                </p>
-              </div>
+            <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <DashboardMetricCard
+                label="Saved watches"
+                value={!watchesHydrated ? "—" : String(watches.length)}
+                helper={!watchesHydrated ? "Loading your local collection..." : collectionLabel}
+              />
+              <DashboardMetricCard
+                label="Total collection value"
+                value={dashboardTotalValueDisplay}
+                helper={dashboardTotalValueHelper}
+                tone={dashboardTotalValueNeedsData ? "attention" : "default"}
+              />
+              <DashboardMetricCard
+                label="Missing value data"
+                value={!watchesHydrated ? "—" : String(watchesMissingValueData)}
+                helper="Watches missing purchase or current value fields."
+                tone={watchesHydrated && watchesMissingValueData > 0 ? "attention" : "default"}
+              />
+              <DashboardMetricCard
+                label="Common brand"
+                value={!watchesHydrated ? "—" : mostCommonBrand ?? "—"}
+                helper="Most frequent brand in your saved collection."
+              />
+            </div>
 
-              <div className={classNames("mt-8 grid gap-3.5 rounded-2xl p-4 sm:max-w-xl", gold.frameLg)}>
-                <div className="border-b border-[hsla(42,32%,38%,0.55)] pb-3.5">
-                  <p className="text-[12px] font-semibold tracking-widest text-white/58">COLLECTION CURRENCY</p>
-                  <p className="mt-1.5 text-[11px] font-normal leading-relaxed text-white/48">
+            <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+              <DashboardRecentWatches
+                watches={recentlyAddedWatches}
+                isLoading={!watchesHydrated}
+                resolvedPhotoUrls={resolvedPhotoUrls}
+                currency={collectionCurrency}
+                onOpenDetail={setDetailWatch}
+                onAddWatch={goAddWatchFromClick}
+              />
+
+              <div className={classNames("rounded-3xl p-4 sm:p-5", gold.frameLg)}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[hsla(44,44%,74%,0.86)]">
+                  Collection controls
+                </p>
+                <div className="mt-4 rounded-2xl border border-[hsla(42,34%,48%,0.5)] bg-black/28 p-3.5">
+                  <p className="text-[12px] font-semibold uppercase tracking-widest text-white/52">Currency</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-white/48">
                     Display and entry currency. Values are not converted when you switch.
                   </p>
-                  <div className="mt-2">
+                  <div className="mt-3">
                     <CurrencyDropdown value={collectionCurrency} onChange={setCollectionCurrency} />
                   </div>
                 </div>
-                <p className="text-[12px] font-semibold tracking-widest text-white/58">COLLECTION STATISTICS</p>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <div className={gold.statCell}>
-                    <p className="text-[12px] font-semibold tracking-widest text-white/50">TOTAL</p>
-                    <p className="mt-1.5 text-[0.9375rem] font-semibold text-white/92">{isMounted ? watches.length : "—"}</p>
-                  </div>
-                  <div className={gold.statCell}>
-                    <p className="text-[12px] font-semibold tracking-widest text-white/50">COMMON BRAND</p>
-                    <p className="mt-1.5 truncate text-[0.9375rem] font-semibold text-white/92">
-                      {isMounted ? (mostCommonBrand ?? "—") : "—"}
-                    </p>
-                  </div>
-                  <div className={gold.statCell}>
-                    <p className="text-[12px] font-semibold tracking-widest text-white/50">TOTAL VALUE</p>
-                    <p className="mt-1.5 text-[0.9375rem] font-semibold text-white/92">
-                      {isMounted ? formatCollectionCurrency(totalCollectionValue, collectionCurrency) : "—"}
-                    </p>
+
+                <div className="mt-4 rounded-2xl border border-[hsla(42,34%,48%,0.5)] bg-black/28 p-3.5">
+                  <p className="text-[12px] font-semibold uppercase tracking-widest text-white/52">Local backup</p>
+                  <p className="mt-1 text-sm text-white/70">Last export: {backupLastLabel}</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-white/48">
+                    HoroLair stores your collection locally. Export a JSON backup regularly, especially on mobile browsers.
+                  </p>
+                  {watchStorageIssue && watches.length === 0 ? (
+                    <div className="mt-3 rounded-xl border border-amber-200/18 bg-amber-200/[0.06] px-3 py-2 text-[12px] leading-relaxed text-amber-50/88">
+                      {watchStorageIssueUserMessage(watchStorageIssue)}
+                    </div>
+                  ) : null}
+                  {backupIsDue ? (
+                    <div className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/5 px-3 py-2 text-[12px] text-amber-100/85">
+                      Backup recommended. Export a JSON backup to keep a copy.
+                    </div>
+                  ) : null}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void onExportBackup()} className={classNames("min-h-[44px]", gold.btnSmPrimary)}>
+                      Export backup
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => backupImportRef.current?.click()}
+                      className={classNames("min-h-[44px]", gold.btnSmSecondary)}
+                    >
+                      Import backup
+                    </button>
+                    <button type="button" onClick={onExportCsv} className={classNames("min-h-[44px]", gold.btnSmSecondary)}>
+                      Export CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void onExportCollectionPdf()}
+                      className={classNames("min-h-[44px]", gold.btnSmSecondary)}
+                    >
+                      Export PDF
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <CollectorHeroPanel />
-          </div>
-        </section>
-
-        <section className="pb-4 pt-2">
-          <div className={classNames("rounded-3xl p-5 sm:p-6", gold.frameLg)}>
-            <p className="text-[11px] tracking-widest text-white/55">BACKUP &amp; EXPORT</p>
-            <h2 className="mt-2 text-lg font-semibold tracking-tight text-white/92">Protect your collection</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/58">
-              Your collection is stored locally on this device and browser — private by design, no cloud. To use it on
-              another device, export a backup and import it there. Export regularly; JSON backups include watch details and
-              embedded photos for a full restore.
-            </p>
-            <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              HoroLair stores your collection locally on this device/browser. Mobile browsers may remove local website
-              data. Export a backup regularly.
-            </p>
-            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              To use your collection on another device, export a backup and import it there. HoroLair does not currently sync
-              between devices.
-            </p>
-            {watchStorageIssue && watches.length === 0 ? (
-              <div
-                className="mt-4 max-w-2xl rounded-2xl border border-amber-200/18 bg-amber-200/[0.06] px-4 py-3 text-sm leading-relaxed text-amber-50/88"
-                role="status"
-              >
-                <p className="text-[11px] font-medium uppercase tracking-widest text-amber-100/55">Recovery</p>
-                <p className="mt-1.5 text-[13px] text-amber-50/90">{watchStorageIssueUserMessage(watchStorageIssue)}</p>
-              </div>
-            ) : null}
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-center">
-              <div className="rounded-2xl border-2 border-[hsla(42,34%,46%,0.82)] bg-black/35 px-4 py-3">
-                <p className="text-[11px] tracking-widest text-white/50">BACKUP REMINDER</p>
-                <p className="mt-1 text-sm text-white/70">Last export: {backupLastLabel}</p>
-                <p className="mt-1 text-[11px] leading-relaxed text-white/45">
-                  Optional local reminder (no notifications). HoroLair will gently nudge you here when it’s time.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBackupReminder(0)}
-                  className={classNames("min-h-[44px]", backupReminderDays === 0 ? gold.btnSmPrimary : gold.btnSmSecondary)}
-                >
-                  Off
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBackupReminder(7)}
-                  className={classNames("min-h-[44px]", backupReminderDays === 7 ? gold.btnSmPrimary : gold.btnSmSecondary)}
-                >
-                  Weekly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBackupReminder(30)}
-                  className={classNames("min-h-[44px]", backupReminderDays === 30 ? gold.btnSmPrimary : gold.btnSmSecondary)}
-                >
-                  Monthly
-                </button>
-              </div>
-            </div>
-
-            {backupIsDue ? (
-              <div className="mt-4 rounded-2xl border border-amber-200/20 bg-amber-200/5 px-4 py-3">
-                <p className="text-sm text-amber-100/85">
-                  Backup recommended. Your collection is local-only — export a JSON backup to keep a copy.
-                </p>
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => void onExportBackup()}
-                    className={classNames("min-h-[44px]", gold.btnSmPrimary)}
-                  >
-                    Export backup now
-                  </button>
+                <div className="mt-4 rounded-2xl border border-[hsla(42,34%,48%,0.5)] bg-black/28 p-3.5">
+                  <p className="text-[12px] font-semibold uppercase tracking-widest text-white/52">Backup reminder</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-white/48">
+                    Optional local reminder shown in this dashboard.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBackupReminder(0)}
+                      className={classNames("min-h-[40px]", backupReminderDays === 0 ? gold.btnSmPrimary : gold.btnSmSecondary)}
+                    >
+                      Off
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBackupReminder(7)}
+                      className={classNames("min-h-[40px]", backupReminderDays === 7 ? gold.btnSmPrimary : gold.btnSmSecondary)}
+                    >
+                      Weekly
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBackupReminder(30)}
+                      className={classNames("min-h-[40px]", backupReminderDays === 30 ? gold.btnSmPrimary : gold.btnSmSecondary)}
+                    >
+                      Monthly
+                    </button>
+                  </div>
                 </div>
+
+                {showSubtleNeverExportedBackupCue ? (
+                  <p className="mt-3 rounded-xl border border-[hsla(42,36%,44%,0.58)] bg-black/30 px-3 py-2 text-[12px] leading-relaxed text-[hsla(44,38%,80%,0.88)]">
+                    Backup recommended: export your collection to avoid losing local data.
+                  </p>
+                ) : null}
               </div>
-            ) : null}
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button type="button" onClick={() => void onExportBackup()} className={classNames("min-h-[44px]", gold.btnSmPrimary)}>
-                Export backup
-              </button>
-              <button
-                type="button"
-                onClick={() => backupImportRef.current?.click()}
-                className={classNames("min-h-[44px]", gold.btnSmSecondary)}
-              >
-                Import backup
-              </button>
-              <button type="button" onClick={onExportCsv} className={classNames("min-h-[44px]", gold.btnSmSecondary)}>
-                Export CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => void onExportCollectionPdf()}
-                className={classNames("min-h-[44px]", gold.btnSmSecondary)}
-              >
-                Export collection PDF
-              </button>
             </div>
-            <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-white/44">
-              HoroLair does not currently sync between devices.
-            </p>
-            {showSubtleNeverExportedBackupCue ? (
-              <div
-                className={classNames(
-                  "mt-3 max-w-2xl rounded-2xl border border-[hsla(42,36%,44%,0.58)] bg-black/30 px-3 py-2.5 text-[12px] font-normal leading-relaxed text-[hsla(44,38%,80%,0.88)]",
-                  gold.frame,
-                )}
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-[hsla(44,32%,58%,0.78)]">Backup</p>
-                <p className="mt-1">
-                  Backup recommended: export your collection to avoid losing local data. Mobile browsers may clear site
-                  storage without warning.
-                </p>
-              </div>
-            ) : null}
-            <p className="mt-4 text-[11px] leading-relaxed text-white/42">
-              CSV export includes metadata only (no images): brand, model, reference, year, serial, case size, movement,
-              values, currency, purchase date, seller, condition, box / papers, notes, and service history. The PDF is a
-              printable personal collection report with photos (generated entirely in your browser).
-            </p>
-          </div>
-        </section>
-        </>
+          </section>
         ) : null}
         {mainNavView === "add-watch" ? (
         <section
